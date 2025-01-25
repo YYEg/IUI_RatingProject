@@ -13,6 +13,7 @@ const teachersData = ref([])
 const achivmentsData = ref([])
 const achievementData = ref([]) // Данные о достижениях
 const scoresData = ref([]) // информация о стоимости достижений
+const isLoggedIn = computed(() => !!token.value); // Проверяем, есть ли токен
 
 const token = ref(localStorage.getItem('token') || '')
 // Вытягиваю данные с бека
@@ -78,13 +79,23 @@ const sortedTeachersData = computed(() => {
 </script>
 
 <template>
-  <div class="m-auto rounded-xl shadow-2xl mt-10">
+  <div class="m-auto mt-10">
     <headerBlock>
-      <div
-        class="flex justify-center items-center border-4 text-2xl p-4 text-center text-white-200 font-bold transition hover:scale-105 cursor-pointer bg-blue-900 rounded-2xl shadow-2xl"
-        @click="() => $router.push('/profile')"
-      >
-        Личный кабинет
+      <div class="flex justify-center">
+        <div
+          v-if="isLoggedIn"
+          class="w-full flex justify-center items-center text-black text-2xl p-4 text-center text-balck font-sm transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
+          @click="() => $router.push('/profile')"
+        >
+          Личный кабинет
+        </div>
+        <div
+          v-else
+          class="w-full flex justify-center items-center text-black text-2xl p-4 text-center text-balck font-sm transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
+          @click="() => $router.push('/login')"
+        >
+          Войти
+        </div>
       </div>
     </headerBlock>
 
@@ -145,12 +156,12 @@ const sortedTeachersData = computed(() => {
     <div class="grid grid-cols-2 items-center justify-items-center mt-4">
       <div class="grid grid-cols-2 items-center justify-items-center mt-4">
         <div
-          class="text-2xl p-4 h-16 border-slate-400 border-x-4 border-t-4 text-center text-slate-400 font-bold transition cursor-pointer rounded-t-md shadow-2xl hover:scale-105"
+          class="text-2xl p-4 h-16 border-slate-300 border-x-2 border-t-2 text-center text-slate-400 font-sm transition cursor-pointer rounded-t-md shadow-2xl"
         >
           <a href="/departamentRatingPage">Кафедры</a>
         </div>
         <div
-          class="text-2xl p-4 h-16 border-slate-400 text-center text-white font-bold transition cursor-pointer bg-blue-900 rounded-t-md shadow-2xl"
+          class="text-2xl p-4 h-16 border-slate-400 text-center text-white font-sm transition cursor-pointer bg-blue-900 rounded-t-md shadow-2xl"
         >
           Преподаватели
         </div>

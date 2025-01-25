@@ -32,48 +32,61 @@ const setLogin = (token) => {
     alert('Неверный логин или пароль')
   }
 }
-
-
 </script>
 <template>
-  <div class="w-4/5 h-screen m-auto bg-slate-200 rounded-xl shadow-2xl mt-10">
-    <headerBlock />
-    <div class="m-auto grid grid-cols-2 items-center p-5 justify-items-center">
-      <div class="text-3xl text-blue-400 font-bold grid col-span-2">
-        Вход в профиль заведующего кафедрой
-      </div>
-      <div class="grid col-span-2 mt-5">
-        <form class="w-full max-w-sm" @submit="login">
-          <div class="mb-5">
-            <label for="login" class="mb-2 text-sm font-medium text-gray-900">Ваш логин</label>
-            <input
-              v-model="username"
-              type="login"
-              id="login"
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 w-full p-2.5"
-              placeholder="Логин..."
-              required
+  <!-- <headerBlock  /> -->
+  <div class="h-screen">
+    <div class="h-full w-full flex justify-center items-center">
+      <div
+        class="flex flex-col items-center justify-center border-2 rounded-2xl h-fit w-1/2 shadow-2xl bg-white p-10"
+      >
+      <div class="text-4xl font-sm mb-6 text-center">Авторизация</div>
+        <div class="flex gird gird-cols-2 items-center justify-center w-full">
+          <div class="w-40">
+            <img
+              src="../assets/hearld_left.png"
+              alt="Логотип"
+              class="flex h-35 w-auto flex-shrink-0 hidden md:block"
+              @click="() => $router.push('/')"
             />
           </div>
-          <div class="mb-5">
-            <label for="password" class="mb-2 text-sm font-medium text-gray-900">Ваш пароль</label>
-            <input
-              v-model="password"
-              type="password"
-              id="password"
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 w-full p-2.5"
-              placeholder="Пароль..."
-              required
-            />
+          <div class="m-auto w-full p-auto">
+            <form class="w-full" @submit.prevent="login">
+              <div class="mb-6">
+                <label for="login" class="mb-2 text-sm font-medium text-gray-900 block"
+                  >Ваш логин</label
+                >
+                <input
+                  v-model="username"
+                  type="login"
+                  id="login"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 w-full p-3"
+                  placeholder="Логин..."
+                  required
+                />
+              </div>
+              <div class="mb-6">
+                <label for="password" class="mb-2 text-sm font-medium text-gray-900 block"
+                  >Ваш пароль</label
+                >
+                <input
+                  v-model="password"
+                  type="password"
+                  id="password"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 w-full p-3"
+                  placeholder="Пароль..."
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full px-5 py-3 text-center"
+              >
+                Войти
+              </button>
+            </form>
           </div>
-
-          <button
-            type="submit"
-            class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full px-5 py-2.5 text-center"
-          >
-            Войти
-          </button>
-        </form>
+        </div>
       </div>
     </div>
   </div>

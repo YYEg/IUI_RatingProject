@@ -18,7 +18,7 @@ const errorMessage = ref('')
 const userDepatment = ref(null)
 const token = ref(localStorage.getItem('token') || '')
 const selectedAchievement = ref(null)
-const isModalOpen = ref(false) 
+const isModalOpen = ref(false)
 
 // Шапка и размеры таблицы
 const tableHeads = ['№', 'Достижение', 'Балл', '']
@@ -34,7 +34,6 @@ const getAchievementText = (achievementId) => {
   const achievement = achievementData.value.find((item) => item.id === achievementId)
   return achievement ? achievement.name : 'Достижение не найдено'
 }
-
 
 // Получение данных пользователя
 const getUserData = async () => {
@@ -145,7 +144,6 @@ const addAchievement = async () => {
     successMessage.value = 'Успешно добавлено достижение!'
     errorMessage.value = '' // Обнуляем ошибку, если запрос успешен
 
-    
     // Скрыть сообщение через некоторое время
     setTimeout(() => {
       successMessage.value = ''
@@ -154,7 +152,7 @@ const addAchievement = async () => {
     console.error('Ошибка при добавлении достижения:', error)
     // Устанавливаем сообщение об ошибке только при наличии ошибки
     errorMessage.value = 'Ошибка при добавлении достижения!'
-    successMessage.value = '' // Убираем сообщение об успехе
+    successMessage.value = ''
 
     // Скрыть сообщение об ошибке через некоторое время
     setTimeout(() => {
@@ -178,10 +176,49 @@ const getAchievementScore = (achievementId) => {
 }
 
 onMounted(() => {
+  // Проверяем, есть ли токен
+  if (!token.value) {
+    // Если токена нет, перенаправляем на страницу авторизации
+    window.location.href = '/login'
+    return
+  }
+
+  // Загружаем данные, если токен есть
   loadData()
 })
-</script>
 
+const setLogout = () => {
+  localStorage.removeItem('token')
+  window.location.href = '/login'
+}
+
+const downloadReport = async () => {
+  try {
+    const response = await axios.get('http://127.0.0.1:8000/api/v1/generate_report/', {
+      responseType: 'blob' // Указываем, что ожидаем бинарный файл
+    })
+
+    // Создание объекта URL для скачивания
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+
+    // Устанавливаем имя файла
+    const filename =
+      response.headers['content-disposition']?.split('filename=')[1]?.replace(/"/g, '') ||
+      'ОТЧЕТ_ПО_КАФЕДРЕ.xlsx'
+    link.download = filename
+
+    // Инициируем скачивание
+    link.click()
+    URL.revokeObjectURL(link.href)
+  } catch (error) {
+    console.error('Ошибка при скачивании отчета:', error)
+  }
+}
+</script>
 
 <template>
   <div class="h-full">
@@ -189,13 +226,13 @@ onMounted(() => {
       <div class="grid grid-cols-2">
         <div>
           <div
-            class="flex justify-center mr-2 items-center border-4 text-xl p-2 text-center font-bold transition hover:scale-105 cursor-pointer bg-blue-900 rounded-2xl shadow-2xl"
+            class="flex justify-center mr-2 items-center bg-white text-xl text-black p-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl"
             @click="downloadReport"
           >
             Вывести данные в отчет
           </div>
           <div
-            class="flex justify-center mr-2 items-center border-4 border-green-400 text-xl p-2 mt-2 text-center text-green-500 font-bold transition hover:scale-105 cursor-pointer bg-blue-900 rounded-2xl shadow-2xl"
+            class="flex justify-center mr-2 items-center bg-white text-xl text-black p-2 mt-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl"
             @click="openModal"
           >
             Добавить достижение
@@ -203,7 +240,7 @@ onMounted(() => {
         </div>
 
         <div
-          class="flex justify-center items-center border-4 border-red-400 text-2xl p-4 text-center text-red-400 font-bold transition hover:scale-105 cursor-pointer bg-blue-900 rounded-2xl shadow-2xl"
+          class="ml-4 flex justify-center items-center text-black bg-white text-2xl p-4 text-center font-sm transition hover:scale-105 cursor-pointer bg-blue-900 rounded-2xl shadow-2xl"
           @click="setLogout()"
         >
           Выйти
@@ -264,7 +301,7 @@ onMounted(() => {
       </form>
     </div>
     <div class="m-auto grid grid-cols-2 items-center mt-4 justify-items-center">
-      <a class="text-3xl text-slate-400 font-bold hover:underline cursor-pointer" href="/">
+      <a class="text-3xl text-slate-400 font-bold hover:scale-105 cursor-pointer" href="/">
         ← Назад
       </a>
       <div v-if="userData">
@@ -277,13 +314,6 @@ onMounted(() => {
     </div>
 
     <div class="p-2">
-      <!-- <div v-if="userData">
-        <div
-          class="text-3xl text-blue-400 font-boldm-auto grid grid-cols-1 items-center p-5 justify-items-center"
-        >
-          Кафедра
-        </div>
-      </div> -->
       <base-table :head="tableHeads" :columnTemplates="tableSizeColumns">
         <table-row
           v-for="(achievement, index) in filteredAchievements"
@@ -295,12 +325,14 @@ onMounted(() => {
             {{ getAchievementText(achievement.Achivment_id) }}
           </table-column>
           <table-column>{{ getAchievementScore(achievement.Achivment_id) }}</table-column>
-          <TableColumn><button
+          <TableColumn
+            ><button
               @click="deleteAchievement(achievement.id)"
               class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
             >
               Удалить
-            </button></TableColumn>
+            </button></TableColumn
+          >
         </table-row>
       </base-table>
 
@@ -309,44 +341,48 @@ onMounted(() => {
         <div class="text-5xl text-blue-400 font-bold">{{ calculateTotalScore }}</div>
       </div>
       <!-- Модальное окно -->
-    <div
-      v-if="isModalOpen"
-      class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50"
-    >
-      <div class="bg-white p-5 rounded-lg shadow-lg max-w-lg w-full">
-        <div class="flex justify-between items-center">
-          <h2 class="text-3xl font-bold text-gray-800">Добавить достижение</h2>
-          <button @click="closeModal" class="text-2xl text-red-500">×</button>
-        </div>
-
-        <select v-model="selectedAchievement" class="text-2xl rounded-xl mt-5 w-full">
-          <option v-for="achievement in achievementData" :key="achievement.id" :value="achievement.id">
-            {{ getAchievementScore(achievement.id) }} баллов | {{ achievement.name }}
-          </option>
-        </select>
-
-        <div
-          class="w-full shadow-2xl text-center hover:bg-green-300 text-2xl text-slate-400 font-bold transition hover:text-slate-600 hover:scale-105 cursor-pointer bg-green-200 ms-5 p-2 rounded-3xl m-5"
-          @click="addAchievement()"
-        >
-          Добавить
-        </div>
-
-        <!-- Success Message Popup -->
-        <transition name="fade">
-          <div v-if="successMessage" class="success-popup text-3xl font-bold text-green-400">
-            {{ successMessage }}
+      <div
+        v-if="isModalOpen"
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50"
+      >
+        <div class="bg-white p-5 rounded-lg shadow-lg max-w-lg w-full">
+          <div class="flex justify-between items-center">
+            <h2 class="text-3xl font-bold text-gray-800">Добавить достижение</h2>
+            <button @click="closeModal" class="text-2xl text-red-500">×</button>
           </div>
-        </transition>
 
-        <!-- Error Message Popup -->
-        <transition name="fade">
-          <div v-if="errorMessage" class="success-popup text-3xl font-bold text-red-400">
-            {{ errorMessage }}
+          <select v-model="selectedAchievement" class="text-2xl rounded-xl mt-5 w-full">
+            <option
+              v-for="achievement in achievementData"
+              :key="achievement.id"
+              :value="achievement.id"
+            >
+              {{ getAchievementScore(achievement.id) }} баллов | {{ achievement.name }}
+            </option>
+          </select>
+
+          <div
+            class="w-full shadow-2xl text-center hover:bg-green-300 text-2xl text-slate-400 font-bold transition hover:text-slate-600 hover:scale-105 cursor-pointer bg-green-200 ms-5 p-2 rounded-3xl m-5"
+            @click="addAchievement()"
+          >
+            Добавить
           </div>
-        </transition>
+
+          <!-- Success Message Popup -->
+          <transition name="fade">
+            <div v-if="successMessage" class="success-popup text-3xl font-bold text-green-400">
+              {{ successMessage }}
+            </div>
+          </transition>
+
+          <!-- Error Message Popup -->
+          <transition name="fade">
+            <div v-if="errorMessage" class="success-popup text-3xl font-bold text-red-400">
+              {{ errorMessage }}
+            </div>
+          </transition>
+        </div>
       </div>
-    </div>
     </div>
   </div>
 </template>
