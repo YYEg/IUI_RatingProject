@@ -224,21 +224,11 @@ const downloadReport = async () => {
   <div class="h-full">
     <headerBlock>
       <div class="grid grid-cols-2">
-        <div>
-          <div
-            class="flex justify-center mr-2 items-center bg-white text-xl text-black p-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl"
-            @click="downloadReport"
-          >
-            Вывести данные в отчет
-          </div>
-          <div
-            class="flex justify-center mr-2 items-center bg-white text-xl text-black p-2 mt-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl"
-            @click="openModal"
-          >
-            Добавить достижение
-          </div>
+        <div
+          class="ml-4 flex justify-center items-center text-black bg-white text-2xl p-4 text-center font-sm cursor-pointer bg-blue-900 rounded-2xl shadow-2xl"
+        >
+          {{ userName }}
         </div>
-
         <div
           class="ml-4 flex justify-center items-center text-black bg-white text-2xl p-4 text-center font-sm transition hover:scale-105 cursor-pointer bg-blue-900 rounded-2xl shadow-2xl"
           @click="setLogout()"
@@ -300,19 +290,26 @@ const downloadReport = async () => {
         </select>
       </form>
     </div>
-    <div class="m-auto grid grid-cols-2 items-center mt-4 justify-items-center">
-      <a class="text-3xl text-slate-400 font-bold hover:scale-105 cursor-pointer" href="/">
-        ← Назад
-      </a>
-      <div v-if="userData">
-        <div
-          class="text-3xl text-blue-400 font-bold m-auto grid grid-cols-1 items-center justify-items-center"
-        >
-          {{ userName }}
-        </div>
+    <div class="grid grid-cols-3 mt-4">
+      <div
+        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
+        @click="() => $router.push('/')"
+      >
+        Назад
+      </div>
+      <div
+        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
+        @click="downloadReport"
+      >
+        Вывести данные в отчет
+      </div>
+      <div
+        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
+        @click="openModal"
+      >
+        Добавить достижение
       </div>
     </div>
-
     <div class="p-2">
       <base-table :head="tableHeads" :columnTemplates="tableSizeColumns">
         <table-row
@@ -337,8 +334,8 @@ const downloadReport = async () => {
       </base-table>
 
       <div class="m-auto grid grid-cols-2 items-center p-5 justify-items-center">
-        <div class="text-3xl text-blue-400 font-bold">Итого баллов:</div>
-        <div class="text-5xl text-blue-400 font-bold">{{ calculateTotalScore }}</div>
+        <div class="text-3xl text-blue-400 font-sm">Итого баллов:</div>
+        <div class="text-5xl text-blue-400 font-bold">0</div>
       </div>
       <!-- Модальное окно -->
       <div
@@ -347,11 +344,11 @@ const downloadReport = async () => {
       >
         <div class="bg-white p-5 rounded-lg shadow-lg max-w-lg w-full">
           <div class="flex justify-between items-center">
-            <h2 class="text-3xl font-bold text-gray-800">Добавить достижение</h2>
-            <button @click="closeModal" class="text-2xl text-red-500">×</button>
+            <h2 class="text-3xl font-sm text-gray-800">Добавить достижение</h2>
+            <button @click="closeModal" class="text-4xl text-red-500">×</button>
           </div>
 
-          <select v-model="selectedAchievement" class="text-2xl rounded-xl mt-5 w-full">
+          <select v-model="selectedAchievement" class="text-2xl mt-3 p-2 rounded-xl w-full">
             <option
               v-for="achievement in achievementData"
               :key="achievement.id"
@@ -362,20 +359,20 @@ const downloadReport = async () => {
           </select>
 
           <div
-            class="w-full shadow-2xl text-center hover:bg-green-300 text-2xl text-slate-400 font-bold transition hover:text-slate-600 hover:scale-105 cursor-pointer bg-green-200 ms-5 p-2 rounded-3xl m-5"
+            class="w-full mt-2 shadow-2xl text-center text-2xl font-bold transition hover:scale-105 cursor-pointer p-2 rounded-2xl border-2 border-black"
             @click="addAchievement()"
           >
             Добавить
           </div>
 
-          <!-- Success Message Popup -->
+          <!-- Сообщение об успехе -->
           <transition name="fade">
             <div v-if="successMessage" class="success-popup text-3xl font-bold text-green-400">
               {{ successMessage }}
             </div>
           </transition>
 
-          <!-- Error Message Popup -->
+          <!-- Сообщение об ошибке -->
           <transition name="fade">
             <div v-if="errorMessage" class="success-popup text-3xl font-bold text-red-400">
               {{ errorMessage }}

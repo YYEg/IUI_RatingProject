@@ -1,75 +1,88 @@
 from django.forms import model_to_dict
-from django.shortcuts import render
 from rest_framework import generics
-from .models import Teacher, Department, Teacher_Achivment, Achivment, Achivment_Category, Score_Value
-from .serializers import TeacherSerializer, DepartmentSerializer, Teacher_AchivmentSerializer, AchivmentSerializer, Achivment_CategorySerializer, Score_ValueSerializer
-from rest_framework.authtoken.models import Token
+from .models import Employee, Department, Employee_Achievment, Achievment
+from .serializers import EmployeeSerializer, DepartmentSerializer, Employee_AchievmentSerializer, AchievmentSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 
-
-# Create your views here.
-class TeacherApiView(generics.ListAPIView):
-    queryset = Teacher.objects.all()
-    serializer_class = TeacherSerializer
+class EmployeeApiView(generics.ListAPIView):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
 
 class DepartmentApiView(generics.ListAPIView):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
 
+from django.db.models import Sum
+
+class DepartmentRatingApiView(APIView):
+    def get(self, request):
+        # Получаем список кафедр с их общим рейтингом (сумма достижений всех сотрудников)
+        departments = Department.objects.annotate(
+            total_score=Sum('employee__employee_achievment__score')  # Сумма баллов всех достижений сотрудников кафедры
+        ).values('id', 'name', 'total_score')
+
+        # Заполняем данные для вывода
+        department_data = [
+            {
+                'id': department['id'],
+                'name': department['name'],
+                'sum': department['total_score'] or 0,  # Если сумма None, подставляем 0
+                'rating': 0  # Пока рейтинг статичен, выставляем 0
+            }
+            for department in departments
+        ]
+
+        return Response(department_data)
+
+
 class DepartmentApiViewDetail(generics.RetrieveAPIView):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
-    lookup_field = 'id'  # Указываем поле, по которому будет происходить поиск
+    lookup_field = 'id'
 
-class TeacherApiViewDetail(generics.RetrieveAPIView):
-    queryset = Teacher.objects.all()
-    serializer_class = TeacherSerializer
-    lookup_field = 'id'  # Указываем поле, по которому будет происходить поиск
+class EmployeeApiViewDetail(generics.RetrieveAPIView):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    lookup_field = 'id'
 
-from django.shortcuts import get_object_or_404
-
-class Teacher_AchivmentApiView(generics.ListCreateAPIView):
-    queryset = Teacher_Achivment.objects.all()
-    serializer_class = Teacher_AchivmentSerializer
-
+class Employee_AchievmentApiView(generics.ListCreateAPIView):
+    queryset = Employee_Achievment.objects.all()
+    serializer_class = Employee_AchievmentSerializer
+    
     def post(self, request):
-        # Получаем экземпляр учителя по teacher_id
-        teacher = get_object_or_404(Teacher, id=request.data['teacher_id'])
+        # Получаем экземпляр Employee по ID
+        employee = get_object_or_404(Employee, id=request.data['employee'])
+        
+        # Получаем экземпляр Achievment по ID
+        achievment = get_object_or_404(Achievment, id=request.data['achievment'])
 
-        # Создаем новый объект Teacher_Achivment с полученными данными
-        ach_new = Teacher_Achivment.objects.create(
-            teacher_id=teacher,
-            Achivment_id=request.data['Achivment'],
+        # Создаем новый объект Employee_Achievment
+        ach_new = Employee_Achievment.objects.create(
+            employee=employee,
+            achievment=achievment,
+            meas_unit_val=request.data['meas_unit_val'],
             score=request.data['score'],
+            verif_doc=request.data['verif_doc']
         )
         
-        return Response({'new_ach': model_to_dict(ach_new)})
+        return Response({'Новое достижение': model_to_dict(ach_new)})
+
     
     def delete(self, request, pk):
-        # Находим объект Teacher_Achivment по его primary key (pk)
-        achivement = get_object_or_404(Teacher_Achivment, pk=pk)
+        # Находим объект по его id
+        achievment = get_object_or_404(Employee_Achievment, pk=pk)
         # Удаляем найденный объект
-        achivement.delete()
-        return Response({'message': 'Achievement deleted successfully'}, status=204)
-    
-    
+        achievment.delete()
+        return Response({'message': 'Достижение удалено!'}, status=204)
 
-
-class AchivmentApiView(generics.ListAPIView):
-    queryset = Achivment.objects.all()
-    serializer_class = AchivmentSerializer
-
-class Achivment_Category(generics.ListAPIView):
-    queryset = Achivment_Category.objects.all()
-    serializer_class = Achivment_CategorySerializer
-
-class Score_Value(generics.ListAPIView):
-    queryset = Score_Value.objects.all()
-    serializer_class = Score_ValueSerializer
+class AchievmentApiView(generics.ListAPIView):
+    queryset = Achievment.objects.all()
+    serializer_class = AchievmentSerializer
 
 class Logout(APIView):
     def get(self, request, format=None):
@@ -82,13 +95,13 @@ class UserProfileView(APIView):
 
     def get(self, request):
         user = request.user
-        # Теперь вы можете использовать объект пользователя (user) для доступа к его данным
+
         user_data = {
             'username': user.username,
             'email': user.email,
             'department': user.department_id_id,
             'last_name': user.last_name,
             'first_name': user.first_name,
-            'teacher': user.teacher_id_id
+            'employee': user.employee_id
         }
         return Response(user_data)

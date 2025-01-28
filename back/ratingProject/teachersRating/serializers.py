@@ -1,9 +1,9 @@
 from rest_framework import serializers
-from .models import Teacher, Department, Teacher_Achivment, Achivment, Achivment_Category, Score_Value
+from .models import Employee, Department, Employee_Achievment, Achievment
 
-class TeacherSerializer(serializers.ModelSerializer):
+class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Teacher
+        model = Employee
         fields = ('id', 'name', 'surname', 'parentName', 'department_id')
 
 class DepartmentSerializer(serializers.ModelSerializer):
@@ -11,22 +11,12 @@ class DepartmentSerializer(serializers.ModelSerializer):
         model = Department
         fields = ('id', 'name')
 
-class Teacher_AchivmentSerializer(serializers.ModelSerializer):
+class Employee_AchievmentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Teacher_Achivment
-        fields = ('id', 'Achivment_id', 'teacher_id')
+        model = Employee_Achievment
+        fields = ('id', 'achievment', 'employee', 'meas_unit_val', 'score', 'verif_doc')
 
-class AchivmentSerializer(serializers.ModelSerializer):
+class AchievmentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Achivment
-        fields = ('id', 'name', 'achivments_category_id')
-
-class Achivment_CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Achivment_Category
-        fields = ('id', 'name')
-
-class Score_ValueSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Score_Value
-        fields = ('id', 'score', 'Achivment')
+        model = Achievment
+        fields = ('id', 'name', 'meas_unit', 'meas_unit_score', 'verif_doc_info')

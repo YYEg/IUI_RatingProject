@@ -1,45 +1,44 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-# Create your models here.
 
-class Teacher(models.Model):
-    #ФИО
+
+class Employee(models.Model):
+
     name = models.CharField(max_length=50)
     surname = models.CharField(max_length=50)
     parentName = models.CharField(max_length=50)
-    #АЙДИ кафедры
-    department_id = models.ForeignKey('Department', on_delete=models.PROTECT, null=False)
+    department = models.ForeignKey('Department', on_delete=models.PROTECT, null=False)
 
     def __str__(self):
         return f'{self.surname} {self.name} {self.parentName}' 
 
 class Department(models.Model):
+
     name = models.CharField(max_length=150, db_index=True)
 
     def __str__(self):
         return self.name
     
 class User(AbstractUser):
-    teacher_id = models.ForeignKey('Teacher', on_delete=models.PROTECT, null=True, blank=True)
-    department_id = models.ForeignKey('Department', on_delete=models.PROTECT, null=True, blank=True)
 
-class Achivment_Category(models.Model):
-    name = models.CharField(max_length=150, db_index=True)
-
-    def __str__(self):
-        return self.name
+    employee = models.ForeignKey('Employee', on_delete=models.PROTECT, null=True, blank=True)
+    department = models.ForeignKey('Department', on_delete=models.PROTECT, null=True, blank=True)
     
-class Achivment(models.Model):
-    name = models.CharField(max_length=150, db_index=True)
-    # Айди категории достижения
-    achivments_category_id = models.ForeignKey('Achivment_Category', on_delete=models.PROTECT, null=False)
+class Achievment(models.Model):
+    
+    number = models.CharField(null=False, max_length=20)
+    name = models.CharField(max_length=300, db_index=True)
+    meas_unit = models.CharField(max_length=100)
+    meas_unit_score = models.FloatField(default=0.0)
+    # Информация о подтверждающем документе
+    verif_doc_info = models.CharField(max_length=1000)
 
-class Teacher_Achivment(models.Model):
-    teacher_id = models.ForeignKey('Teacher', on_delete=models.PROTECT, null=False)
-    Achivment = models.ForeignKey('Achivment', on_delete=models.PROTECT, null=False)
-    score = models.IntegerField(default=0)
-
-class Score_Value(models.Model):
-    Achivment = models.ForeignKey('Achivment', on_delete=models.PROTECT, null=False)
-    score = models.IntegerField(default=0)
+class Employee_Achievment(models.Model):
+    employee = models.ForeignKey('Employee', on_delete=models.PROTECT, null=False)
+    achievment = models.ForeignKey('Achievment', on_delete=models.PROTECT, null=False)
+    meas_unit_val = models.CharField(max_length=50)
+    score = models.FloatField(default=0.0)
+    # Подтверждающий документ
+    verif_doc = models.CharField(max_length=1000)
+   
