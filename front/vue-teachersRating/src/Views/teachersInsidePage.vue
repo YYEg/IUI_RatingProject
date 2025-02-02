@@ -91,18 +91,92 @@ const getUserData = () => {
 </script>
 
 <template>
-  <div class="w-4/5 h-full m-auto bg-slate-200 rounded-xl shadow-2xl mt-10">
-    <headerBlock @click="() => $router.push('/')" />
+  <div class="h-full m-auto mt-10">
+    <headerBlock>
+      <div class="flex justify-center">
+        <div
+          v-if="isLoggedIn"
+          class="w-full flex justify-center items-center text-black text-2xl p-4 text-center font-sm transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
+          @click="() => $router.push('/profile')"
+        >
+          Личный кабинет
+        </div>
+        <div
+          v-else
+          class="w-full flex justify-center items-center text-black text-2xl p-4 text-center font-sm transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
+          @click="() => $router.push('/login')"
+        >
+          Войти
+        </div>
+      </div>
+    </headerBlock>
 
-    <div class="m-auto grid grid-cols-2 items-center p-5 justify-items-center">
-      <a
-        class="text-3xl text-slate-400 font-bold hover:underline cursor-pointer"
-        @click="$router.go(-1)"
+    <!-- Фильтры -->
+    <div class="flex grid grid-cols-2 items-center mt-4 mx-4">
+      <div class="relative">
+        <input
+          class="appearance-none border-2 pl-10 border-gray-300 hover:border-gray-400 transition-colors rounded-md w-full py-2 px-3 text-gray-800 leading-tight focus:outline-none focus:ring-purple-600 focus:border-purple-600 focus:shadow-outline"
+          id="search"
+          type="text"
+          placeholder="Search..."
+        />
+        <div class="absolute right-0 inset-y-0 flex items-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="-ml-1 mr-3 h-5 w-5 text-gray-400 hover:text-gray-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </div>
+        <div class="absolute left-0 inset-y-0 flex items-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 ml-3 text-gray-400 hover:text-gray-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+      </div>
+      <form class="mx-4">
+        <select
+          id="period"
+          class="bg-white border border-gray-300 text-sm rounded-md focus:ring-blue-900 block w-full p-2"
+        >
+          <option selected>01.09.2024-31.08.2025 (Текущий)</option>
+          <option>01.09.2023-31.08.2024</option>
+          <option>01.09.2022-31.08.2023</option>
+        </select>
+      </form>
+    </div>
+
+    <div class="grid grid-cols-2 mt-4 mx-4 gap-2">
+      <div
+        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
+        @click="() => $router.push('/')"
       >
-        ← Назад
-      </a>
-      <div class="items-center p-2 justify-items-center text-3xl font-bold text-blue-400">
-        {{ teacherData.surname }} {{ teacherData.name }} {{ teacherData.parentName }}
+        Назад
+      </div>
+      <div
+        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
+        @click="downloadReport"
+      >
+        Вывести данные в отчет
       </div>
     </div>
 

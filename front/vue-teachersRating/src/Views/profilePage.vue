@@ -290,7 +290,7 @@ const downloadReport = async () => {
         </select>
       </form>
     </div>
-    <div class="grid grid-cols-3 mt-4">
+    <div class="grid grid-cols-3 mt-4 mx-4">
       <div
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="() => $router.push('/')"
