@@ -7,6 +7,7 @@ import loginPage from './Views/loginPage.vue'
 import profilePage from './Views/profilePage.vue'
 import addAchievements from './Views/addAchivmnetPage.vue'
 import testRating from './components/testRating.vue'
+import TeachersInsidePage from './Views/teachersInsidePage.vue'
 
 export default createRouter({
   history: createWebHistory(),
@@ -20,23 +21,22 @@ export default createRouter({
     {
       path: '/testRating',
       component: testRating,
-      name: 'testRating',
+      name: 'testRating'
     },
     {
       path: '/departamentRatingPage',
       component: departamentRatingPage
     },
     {
-      path: '/departamentRatingPage/:id',
-      name: 'depatmentInsidePage',
-      component: depatmentInsidePage,
-      props: true
+      path: '/department/:id',
+      name: 'departmentInsidePage',
+      component: depatmentInsidePage
     },
     {
-      path: '/teachersRatingPage/:id',
+      path: '/teachers/:id',
       name: 'teachersInsidePage',
-      component: teachersInsidePage,
-      props: true
+      component: TeachersInsidePage,  // Компонент для отображения информации о преподавателе
+      props: true,  // Это позволяет передавать параметр `id` в компонент как пропс
     },
     //auth
     {
@@ -54,6 +54,6 @@ export default createRouter({
       path: '/profile/addAchievements',
       name: 'addAchievements',
       component: addAchievements
-    }
+    },
   ]
 })

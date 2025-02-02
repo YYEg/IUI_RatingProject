@@ -9,6 +9,7 @@
   padding: 15px 0;
   position: relative;
   color: #000000;
+  font-weight: 600;
   &__title {
     margin: 5px;
     display: none;

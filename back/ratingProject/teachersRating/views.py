@@ -8,16 +8,42 @@ from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+from django.db.models import Sum
 
-class EmployeeApiView(generics.ListAPIView):
-    queryset = Employee.objects.all()
-    serializer_class = EmployeeSerializer
 
+# class EmployeeApiView(generics.ListAPIView):
+#     queryset = Employee.objects.all()
+#     serializer_class = EmployeeSerializer
+
+class EmployeeApiView(APIView):
+    def get(self, request):
+        # Получаем всех сотрудников
+        employees = Employee.objects.all().annotate(
+            total_score=Sum('employee_achievment__score')  # Суммируем баллы достижений
+        )
+
+        # Логируем данные для отладки
+        for employee in employees:
+            print(f"Employee: {employee.name} {employee.surname}, Total Score: {employee.total_score}")
+
+        # Сериализуем данные
+        employee_data = [
+            {
+                'id': employee.id,
+                'surname': employee.surname,
+                'name': employee.name,
+                'parentName': employee.parentName,
+                'total_score': employee.total_score or 0  # Если сумма None, подставляем 0
+            }
+            for employee in employees
+        ]
+
+        return Response(employee_data)
+    
 class DepartmentApiView(generics.ListAPIView):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
 
-from django.db.models import Sum
 
 class DepartmentRatingApiView(APIView):
     def get(self, request):
@@ -44,6 +70,30 @@ class DepartmentApiViewDetail(generics.RetrieveAPIView):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
     lookup_field = 'id'
+
+class DepartmentTeachersApiView(APIView):
+    def get(self, request, department_id):
+        # Получаем кафедру или возвращаем 404
+        department = get_object_or_404(Department, id=department_id)
+
+        # Получаем преподавателей только этой кафедры с суммой их достижений
+        teachers = Employee.objects.filter(department=department).annotate(
+            total_score=Sum('employee_achievment__score')  # Суммируем баллы достижений
+        )
+
+        # Сериализуем данные
+        teacher_data = [
+            {
+                'id': teacher.id,
+                'surname': teacher.surname,
+                'name': teacher.name,
+                'parentName': teacher.parentName,
+                'total_score': teacher.total_score or 0  # Если сумма None, подставляем 0
+            }
+            for teacher in teachers
+        ]
+
+        return Response(teacher_data)
 
 class EmployeeApiViewDetail(generics.RetrieveAPIView):
     queryset = Employee.objects.all()
@@ -99,7 +149,7 @@ class UserProfileView(APIView):
         user_data = {
             'username': user.username,
             'email': user.email,
-            'department': user.department_id_id,
+            'department': user.department_id,
             'last_name': user.last_name,
             'first_name': user.first_name,
             'employee': user.employee_id

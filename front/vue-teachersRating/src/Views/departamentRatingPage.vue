@@ -213,6 +213,7 @@ onMounted(async () => {
     // Запрос данных кафедр с backend
     const response = await axios.get('http://127.0.0.1:8000/api/v1/department_ratings/')
     departmentData.value = response.data
+    console.log(token.value)
   } catch (error) {
     console.error('Ошибка загрузки данных кафедр:', error)
   }
@@ -221,7 +222,7 @@ onMounted(async () => {
 
 <template>
   <div class="h-screen m-auto mt-10">
-    <!-- Header -->
+    <!-- Шапка -->
     <headerBlock>
       <div class="flex justify-center">
         <div
@@ -241,7 +242,7 @@ onMounted(async () => {
       </div>
     </headerBlock>
 
-    <!-- Filters -->
+    <!-- Фильтры -->
     <div class="flex grid grid-cols-2 items-center mt-4 mx-4">
       <div class="relative">
         <input
@@ -295,6 +296,7 @@ onMounted(async () => {
       </form>
     </div>
 
+    <!-- Кнопки выбора рейтинга -->
     <div class="grid grid-cols-2 items-center justify-items-center mt-4">
       <div class="grid grid-cols-2 items-center justify-items-center mt-4">
         <div
@@ -310,7 +312,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Table -->
+    <!-- Таблица -->
     <base-table :head="tableHeads" :columnTemplates="tableSizeColumns">
       <table-row
         v-for="(department, index) in departmentData"
@@ -318,11 +320,10 @@ onMounted(async () => {
         :columnTemplates="tableSizeColumns"
       >
         <table-column>{{ index + 1 }}</table-column>
-        <table-column class="text-blue-400 underline cursor-pointer">
-          <!-- <router-link :to="{ name: 'departmentInsidePage', params: { id: department.id } }">
+        <table-column class="cursor-pointer">
+          <router-link :to="{ name: 'departmentInsidePage', params: { id: department.id } }">
             {{ department.name }}
-          </router-link> -->
-          {{ department.name }}
+          </router-link>
         </table-column>
         <table-column>{{ department.sum }}</table-column>
         <table-column>0</table-column>
@@ -330,4 +331,3 @@ onMounted(async () => {
     </base-table>
   </div>
 </template>
-

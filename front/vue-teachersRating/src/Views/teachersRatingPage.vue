@@ -8,73 +8,21 @@ import axios from 'axios'
 
 const tableHeads = ['№', 'ФИО', 'Сумма баллов', 'Рейтинг']
 const tableSizeColumns = '1fr 8fr 3fr 3fr'
-
-const teachersData = ref([])
-const achivmentsData = ref([])
-const achievementData = ref([]) // Данные о достижениях
-const scoresData = ref([]) // информация о стоимости достижений
+const employeesData = ref([])
 const isLoggedIn = computed(() => !!token.value); // Проверяем, есть ли токен
 
 const token = ref(localStorage.getItem('token') || '')
-// Вытягиваю данные с бека
+
+
+// Вытягиваю данные с бека для всех сотрудников
 onMounted(async () => {
   try {
-    const [teacherAchivmentsResponse, achievementDataResponse, scoreDataResponce, teacherResponce] =
-      await Promise.all([
-        axios.get('http://127.0.0.1:8000/api/v1/teacher_achivments/'),
-        axios.get('http://127.0.0.1:8000/api/v1/achivments/'),
-        axios.get('http://127.0.0.1:8000/api/v1/score_values/'),
-        axios.get('http://127.0.0.1:8000/api/v1/teachers/')
-      ])
-
-    achivmentsData.value = teacherAchivmentsResponse.data
-    achievementData.value = achievementDataResponse.data
-    scoresData.value = scoreDataResponce.data
-    teachersData.value = teacherResponce.data
+    const employeeResponse = await axios.get('http://127.0.0.1:8000/api/v1/employees/')
+    employeesData.value = employeeResponse.data
+    console.log(employeesData.value)
   } catch (error) {
     console.log(error)
   }
-})
-
-// Функция для получения баллов достижения по его идентификатору
-const getAchievementScore = (achievementId) => {
-  const score = scoresData.value.find((item) => item.Achivment === achievementId)
-  return score ? score.score : 0
-}
-
-// Функция для вычисления суммы баллов для каждого преподавателя
-const calculateSumScore = (teacherId) => {
-  const filteredAchievements = achivmentsData.value.filter(
-    (achievement) => achievement.teacher_id === teacherId
-  )
-
-  return filteredAchievements.reduce((total, achievement) => {
-    return total + getAchievementScore(achievement.Achivment_id)
-  }, 0)
-}
-
-// Обработка сортировки
-const sortBy = ref({ column: 'sum', order: 'desc' }) // Изначально сортируем по сумме баллов по убыванию
-
-const sortTable = (column) => {
-  if (sortBy.value.column === column) {
-    sortBy.value.order = sortBy.value.order === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortBy.value.column = column
-    sortBy.value.order = 'desc'
-  }
-}
-
-const sortedTeachersData = computed(() => {
-  return teachersData.value.slice().sort((a, b) => {
-    const aValue = calculateSumScore(a.id)
-    const bValue = calculateSumScore(b.id)
-    if (sortBy.value.order === 'asc') {
-      return aValue - bValue
-    } else {
-      return bValue - aValue
-    }
-  })
 })
 </script>
 
@@ -167,19 +115,19 @@ const sortedTeachersData = computed(() => {
         </div>
       </div>
     </div>
-    <base-table :head="tableHeads" :columnTemplates="tableSizeColumns" @sorting="sortTable">
+    <base-table :head="tableHeads" :columnTemplates="tableSizeColumns">
       <table-row
-        v-for="(teacher, index) in sortedTeachersData"
-        :key="teacher.id"
+        v-for="(employee, index) in employeesData"
+        :key="employee.id"
         :columnTemplates="tableSizeColumns"
       >
         <table-column>{{ index + 1 }}</table-column>
-        <table-column class="text-blue-400 underline cursor-pointer"
-          ><router-link :to="{ name: 'teachersInsidePage', params: { id: teacher.id } }"
-            >{{ teacher.surname }} {{ teacher.name }} {{ teacher.parentName }}</router-link
-          >
+        <table-column class="cursor-pointer">
+          <router-link :to="{ name: 'teachersInsidePage', params: { id: employee.id } }">
+            {{ employee.surname }} {{ employee.name }} {{ employee.parentName }}
+          </router-link>
         </table-column>
-        <table-column @click="sortTable('sum')">{{ calculateSumScore(teacher.id) }}</table-column>
+        <table-column>{{ employee.total_score }}</table-column> <!-- Сумма баллов -->
         <table-column>{{ index + 1 }}</table-column>
       </table-row>
     </base-table>

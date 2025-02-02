@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework.authtoken.views import obtain_auth_token
 
-from teachersRating.views import Logout, DepartmentRatingApiView, UserProfileView, AchievmentApiView, Employee_AchievmentApiView, EmployeeApiViewDetail, DepartmentApiViewDetail, DepartmentApiView, EmployeeApiView
+from teachersRating.views import Logout, DepartmentRatingApiView, DepartmentTeachersApiView, UserProfileView, AchievmentApiView, Employee_AchievmentApiView, EmployeeApiViewDetail, DepartmentApiViewDetail, DepartmentApiView, EmployeeApiView
 from teachersRating.generate_report import generate_report
 
 urlpatterns = [
@@ -14,6 +14,7 @@ urlpatterns = [
     path('api/v1/achievments/', AchievmentApiView.as_view()),
     path('api/v1/employee_achievment/', Employee_AchievmentApiView.as_view()),
     path('api/v1/department_ratings/', DepartmentRatingApiView.as_view(), name='department_ratings'),
+    path('api/v1/departments/<int:department_id>/teachers/', DepartmentTeachersApiView.as_view(), name='department_teachers'),
 
     path('auth/', include('djoser.urls')),
     path('auth/token', obtain_auth_token, name='token'),
