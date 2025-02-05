@@ -9,7 +9,8 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum
-
+from django.db.models import F, Window
+from django.db.models.functions import Rank
 
 # class EmployeeApiView(generics.ListAPIView):
 #     queryset = Employee.objects.all()
@@ -17,23 +18,22 @@ from django.db.models import Sum
 
 class EmployeeApiView(APIView):
     def get(self, request):
-        # Получаем всех сотрудников
-        employees = Employee.objects.all().annotate(
-            total_score=Sum('employee_achievment__score')  # Суммируем баллы достижений
+        employees = Employee.objects.annotate(
+            total_score=Sum('employee_achievment__score'),
+            rating=Window(
+                expression=Rank(),
+                order_by=F('total_score').desc()
+            )
         )
 
-        # Логируем данные для отладки
-        for employee in employees:
-            print(f"Employee: {employee.name} {employee.surname}, Total Score: {employee.total_score}")
-
-        # Сериализуем данные
         employee_data = [
             {
                 'id': employee.id,
                 'surname': employee.surname,
                 'name': employee.name,
                 'parentName': employee.parentName,
-                'total_score': employee.total_score or 0  # Если сумма None, подставляем 0
+                'total_score': employee.total_score or 0,
+                'rating': employee.rating
             }
             for employee in employees
         ]
@@ -47,18 +47,20 @@ class DepartmentApiView(generics.ListAPIView):
 
 class DepartmentRatingApiView(APIView):
     def get(self, request):
-        # Получаем список кафедр с их общим рейтингом (сумма достижений всех сотрудников)
         departments = Department.objects.annotate(
-            total_score=Sum('employee__employee_achievment__score')  # Сумма баллов всех достижений сотрудников кафедры
-        ).values('id', 'name', 'total_score')
+            total_score=Sum('employee__employee_achievment__score'),
+            rating=Window(
+                expression=Rank(),
+                order_by=F('total_score').desc()
+            )
+        ).values('id', 'name', 'total_score', 'rating')
 
-        # Заполняем данные для вывода
         department_data = [
             {
                 'id': department['id'],
                 'name': department['name'],
-                'sum': department['total_score'] or 0,  # Если сумма None, подставляем 0
-                'rating': 0  # Пока рейтинг статичен, выставляем 0
+                'sum': department['total_score'] or 0,
+                'rating': department['rating']
             }
             for department in departments
         ]

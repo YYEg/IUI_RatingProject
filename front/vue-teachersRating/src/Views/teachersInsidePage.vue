@@ -73,21 +73,6 @@ const getAchievementScore = (achievementId) => {
 const filteredAchievements = computed(() => {
   return achivmentsData.value.filter((achievement) => achievement.teacher_id === teacherId.value)
 })
-
-const getUserData = () => {
-  axios
-    .get('http://127.0.0.1:8000/profile/', {
-      headers: {
-        Authorization: `Token ${token.value}`
-      }
-    })
-    .then((response) => {
-      userData.value = response.data
-    })
-    .catch((error) => {
-      console.error('Error fetching user data:', error)
-    })
-}
 </script>
 
 <template>

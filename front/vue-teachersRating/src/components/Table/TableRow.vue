@@ -15,23 +15,6 @@ const props = defineProps({
 
 <style lang="scss" scoped>
 .table-row {
-  border-bottom: 2px solid #000000;
-  background-color: #ffffff;
-  position: relative;
-  display: grid;
-  column-gap: 10px;
-  align-items: center;
-  padding: 0 16px;
-  text-align: center;
-  
-  @media screen and (max-width: 768px) {
-    display: block;
-  }
-  &:last-child {
-    border-bottom: none;
-  }
-  &--items-center {
-    justify-items: center;
-  }
+  display: contents; /* Убирает лишний div, сохраняя стили ячеек */
 }
 </style>

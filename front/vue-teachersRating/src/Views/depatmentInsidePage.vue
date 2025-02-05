@@ -3,29 +3,75 @@ import headerBlock from '../components/headerBlock.vue'
 import BaseTable from '@/components/Table/BaseTable.vue'
 import TableRow from '@/components/Table/TableRow.vue'
 import TableColumn from '@/components/Table/TableColumn.vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, reactive } from 'vue'
 import axios from 'axios'
 import { useRoute } from 'vue-router'
 
-const tableHeads = ['№', 'ФИО', 'Сумма баллов', 'Рейтинг']
-const tableSizeColumns = '1fr 8fr 3fr 3fr'
-const teachersData = ref([])
-const token = ref(localStorage.getItem('token') || '') // Токен пользователя
-const isLoggedIn = ref(!!token.value) // Проверка авторизации
+const route = useRoute()
+const departmentId = route.params.id
 
-const route = useRoute() // Получаем текущий маршрут
-const departmentId = computed(() => {
-  return Number(route.params.id)
+const tableHeads = [
+  { key: 'id', label: '№' },
+  { key: 'fullName', label: 'ФИО' },
+  { key: 'total_score', label: 'Сумма баллов' },
+  { key: 'rating', label: 'Рейтинг' }
+]
+const tableSizeColumns = '1fr 8fr 3fr 3fr'
+const employeesData = ref([])
+const isLoggedIn = computed(() => !!token.value)
+const token = ref(localStorage.getItem('token') || '')
+const searchQuery = ref('')
+const selectedPeriod = ref('01.09.2024-31.08.2025')
+
+const sortBy = reactive({
+  column: 'total_score',
+  order: 'desc'
 })
 
-// Вытягиваю данные с бека
+// Фильтрация данных
+const filteredEmployees = computed(() => {
+  return employeesData.value.filter(employee => {
+    const fullName = `${employee.surname} ${employee.name} ${employee.parentName}`.toLowerCase();
+    return fullName.includes(searchQuery.value.toLowerCase());
+  });
+});
+
+// Функция сортировки
+const sortTable = (column) => {
+  if (sortBy.column === column) {
+    sortBy.order = sortBy.order === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.column = column
+    sortBy.order = 'desc'
+  }
+}
+
+// Отсортированные данные
+const sortedEmployees = computed(() => {
+  return [...filteredEmployees.value].sort((a, b) => {
+    let aValue, bValue
+    
+    if (sortBy.column === 'fullName') {
+      aValue = `${a.surname} ${a.name} ${a.parentName}`.toLowerCase()
+      bValue = `${b.surname} ${b.name} ${b.parentName}`.toLowerCase()
+    } else {
+      aValue = a[sortBy.column]
+      bValue = b[sortBy.column]
+    }
+
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return sortBy.order === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
+    } else {
+      return sortBy.order === 'asc' ? aValue - bValue : bValue - aValue
+    }
+  })
+})
+
+// Вытягиваю данные с бэка для сотрудников конкретной кафедры
 onMounted(async () => {
   try {
-    const teacherResponse = await axios.get(
-      `http://127.0.0.1:8000/api/v1/departments/${departmentId.value}/teachers/`
-    )
-    teachersData.value = teacherResponse.data
-    console.log(teachersData.value)
+    const employeeResponse = await axios.get(`http://127.0.0.1:8000/api/v1/departments/${departmentId}/teachers/`)
+    employeesData.value = employeeResponse.data
   } catch (error) {
     console.log(error)
   }
@@ -33,7 +79,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-screen m-auto mt-10">
+  <div class="m-auto mt-10">
     <headerBlock>
       <div class="flex justify-center">
         <div
@@ -53,31 +99,14 @@ onMounted(async () => {
       </div>
     </headerBlock>
 
-    <!-- Фильтры -->
-    <div class="flex grid grid-cols-2 items-center my-4 mx-4">
+    <div class="flex grid grid-cols-2 items-center mt-4 mx-4">
       <div class="relative">
         <input
-          class="appearance-none border-2 pl-10 border-gray-300 hover:border-gray-400 transition-colors rounded-md w-full py-2 px-3 text-gray-800 leading-tight focus:outline-none focus:ring-purple-600 focus:border-purple-600 focus:shadow-outline"
-          id="search"
+          v-model="searchQuery"
+          class="appearance-none border-2 pl-10 border-gray-300 hover:border-gray-400 transition-colors rounded-md w-full py-2 px-3 text-gray-800 leading-tight focus:outline-none focus:ring-blue-900 focus:border-blue-900 focus:shadow-outline"
           type="text"
           placeholder="Search..."
         />
-        <div class="absolute right-0 inset-y-0 flex items-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="-ml-1 mr-3 h-5 w-5 text-gray-400 hover:text-gray-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </div>
         <div class="absolute left-0 inset-y-0 flex items-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -97,17 +126,17 @@ onMounted(async () => {
       </div>
       <form class="mx-4">
         <select
-          id="period"
+          v-model="selectedPeriod"
           class="bg-white border border-gray-300 text-sm rounded-md focus:ring-blue-900 block w-full p-2"
         >
-          <option selected>01.09.2024-31.08.2025 (Текущий)</option>
+          <option>01.09.2024-31.08.2025 (Текущий)</option>
           <option>01.09.2023-31.08.2024</option>
           <option>01.09.2022-31.08.2023</option>
         </select>
       </form>
     </div>
 
-    <div class="grid grid-cols-2 mt-4 mx-4">
+    <div class="grid grid-cols-2 my-4 mx-4 ">
       <div
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="() => $router.push('/')"
@@ -122,22 +151,37 @@ onMounted(async () => {
       </div>
     </div>
 
-    <base-table :head="tableHeads" :columnTemplates="tableSizeColumns">
-      <table-row
-        v-for="(teacher, index) in teachersData"
-        :key="teacher.id"
-        :columnTemplates="tableSizeColumns"
-      >
-        <table-column>{{ index + 1 }}</table-column>
-        <table-column class="text-blue-400 underline cursor-pointer">
-          <router-link :to="{ name: 'teachersInsidePage', params: { id: teacher.id } }">
-            {{ teacher.surname }} {{ teacher.name }} {{ teacher.parentName }}
-          </router-link>
-        </table-column>
-        <table-column>{{ teacher.total_score }}</table-column>
-        <!-- Сумма баллов -->
-        <table-column>{{ index + 1 }}</table-column>
-      </table-row>
-    </base-table>
+    <BaseTable :columnTemplates="tableSizeColumns">
+      <TableRow :columnTemplates="tableSizeColumns">
+        <TableColumn
+          v-for="head in tableHeads"
+          :key="head.key"
+          @click="sortTable(head.key)"
+          class="cursor-pointer font-sm text-white"
+        >
+          {{ head.label }}
+          <span v-if="sortBy.column === head.key">
+            {{ sortBy.order === 'asc' ? '▲' : '▼' }}
+          </span>
+        </TableColumn>
+      </TableRow>
+
+      <template #body>
+        <TableRow
+          v-for="(employee, index) in sortedEmployees"
+          :key="employee.id"
+          :columnTemplates="tableSizeColumns"
+        >
+          <TableColumn>{{ index + 1 }}</TableColumn>
+          <TableColumn class="cursor-pointer">
+            <router-link :to="{ name: 'teachersInsidePage', params: { id: employee.id } }">
+              {{ employee.surname }} {{ employee.name }} {{ employee.parentName }}
+            </router-link>
+          </TableColumn>
+          <TableColumn>{{ employee.total_score }}</TableColumn>
+          <TableColumn>{{ index + 1 }}</TableColumn>
+        </TableRow>
+      </template>
+    </BaseTable>
   </div>
 </template>
