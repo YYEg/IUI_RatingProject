@@ -123,6 +123,25 @@ class Employee_AchievmentApiView(generics.ListCreateAPIView):
         )
         
         return Response({'Новое достижение': model_to_dict(ach_new)})
+    
+class EmployeeAchievementsApiView(APIView):
+    def get(self, request, employee_id):
+        """Возвращает список достижений конкретного сотрудника с их баллами."""
+        employee = get_object_or_404(Employee, id=employee_id)
+        achievements = Employee_Achievment.objects.filter(employee=employee)
+
+        achievements_data = [
+            {
+                'id': ach.id,
+                'achievment_name': ach.achievment.name,
+                'score': ach.score,
+                'meas_unit_val': ach.meas_unit_val,
+                'verif_doc': ach.verif_doc
+            }
+            for ach in achievements
+        ]
+
+        return Response({'employee': employee.surname, 'achievements': achievements_data})
 
     
     def delete(self, request, pk):

@@ -41,4 +41,5 @@ class Employee_Achievment(models.Model):
     score = models.FloatField(default=0.0)
     # Подтверждающий документ
     verif_doc = models.CharField(max_length=1000)
+    # reciving_date = models.DateField()
    

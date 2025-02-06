@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework.authtoken.views import obtain_auth_token
 
-from teachersRating.views import Logout, DepartmentRatingApiView, DepartmentTeachersApiView, UserProfileView, AchievmentApiView, Employee_AchievmentApiView, EmployeeApiViewDetail, DepartmentApiViewDetail, DepartmentApiView, EmployeeApiView
+from teachersRating.views import Logout, EmployeeAchievementsApiView, DepartmentRatingApiView, DepartmentTeachersApiView, UserProfileView, AchievmentApiView, Employee_AchievmentApiView, EmployeeApiViewDetail, DepartmentApiViewDetail, DepartmentApiView, EmployeeApiView
 from teachersRating.generate_report import generate_report
 
 urlpatterns = [
@@ -22,5 +22,6 @@ urlpatterns = [
     path('profile/', UserProfileView.as_view(), name='profile'),
 
      path('api/v1/employee_achievment/<int:pk>/', Employee_AchievmentApiView.as_view(), name='employee-achievment-detail'),
+     path('api/v1/achivments_of_employee/<int:employee_id>/', EmployeeAchievementsApiView.as_view(), name='achievments_of_employee'),
      path('api/v1/generate_report/', generate_report, name='generate_report')
 ]
