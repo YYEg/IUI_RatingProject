@@ -18,6 +18,7 @@ const tableHeads = [
 ]
 const tableSizeColumns = '1fr 8fr 3fr 3fr'
 const employeesData = ref([])
+const depData = ref([])
 const isLoggedIn = computed(() => !!token.value)
 const token = ref(localStorage.getItem('token') || '')
 const searchQuery = ref('')
@@ -72,6 +73,8 @@ onMounted(async () => {
   try {
     const employeeResponse = await axios.get(`http://127.0.0.1:8000/api/v1/departments/${departmentId}/teachers/`)
     employeesData.value = employeeResponse.data
+    const response_dep = await axios.get(`http://127.0.0.1:8000/api/v1/departments/${departmentId}/`)
+    depData.value = response_dep.data
   } catch (error) {
     console.log(error)
   }
@@ -136,12 +139,17 @@ onMounted(async () => {
       </form>
     </div>
 
-    <div class="grid grid-cols-2 my-4 mx-4 ">
+    <div class="grid grid-cols-3 my-4 mx-4 ">
       <div
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="() => $router.push('/')"
       >
         Назад
+      </div>
+      <div
+        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm rounded-2xl shadow-2xl border-2 border-slate-400"
+      >
+        {{depData.name}}
       </div>
       <div
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"

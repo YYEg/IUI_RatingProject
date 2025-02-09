@@ -119,7 +119,8 @@ class Employee_AchievmentApiView(generics.ListCreateAPIView):
             achievment=achievment,
             meas_unit_val=request.data['meas_unit_val'],
             score=request.data['score'],
-            verif_doc=request.data['verif_doc']
+            verif_doc=request.data['verif_doc'],
+            #number=request.data['number']
         )
         
         return Response({'Новое достижение': model_to_dict(ach_new)})
@@ -136,7 +137,8 @@ class EmployeeAchievementsApiView(APIView):
                 'achievment_name': ach.achievment.name,
                 'score': ach.score,
                 'meas_unit_val': ach.meas_unit_val,
-                'verif_doc': ach.verif_doc
+                'verif_doc': ach.verif_doc,
+                #'number': ach.number
             }
             for ach in achievements
         ]
@@ -144,11 +146,46 @@ class EmployeeAchievementsApiView(APIView):
         return Response({'employee': employee.surname, 'achievements': achievements_data})
 
     
-    def delete(self, request, pk):
-        # Находим объект по его id
-        achievment = get_object_or_404(Employee_Achievment, pk=pk)
-        # Удаляем найденный объект
-        achievment.delete()
+    def delete(self, request, employee_id):
+        achievments = Employee_Achievment.objects.filter(employee_id=employee_id)
+        if not achievments.exists():
+            return Response({'error': 'Достижения не найдены'}, status=404)
+
+        achievments.delete()
+        return Response({'message': 'Все достижения сотрудника удалены!'}, status=204)
+    
+class EmployeeAchievementsDeleteApiView(APIView):
+    def get(self, request, employee_id):
+        """Возвращает список достижений конкретного сотрудника с их баллами."""
+        employee = get_object_or_404(Employee, id=employee_id)
+        achievements = Employee_Achievment.objects.filter(employee=employee)
+
+        achievements_data = [
+            {
+                'id': ach.id,
+                'achievment_name': ach.achievment.name,
+                'score': ach.score,
+                'meas_unit_val': ach.meas_unit_val,
+                'verif_doc': ach.verif_doc,
+                #'number': ach.number
+            }
+            for ach in achievements
+        ]
+
+        return Response({'employee': employee.surname, 'achievements': achievements_data})
+
+    def delete(self, request, achievement_id):
+        """Удаляет конкретное достижение по его ID"""
+        achievement = get_object_or_404(Employee_Achievment, id=achievement_id)
+        achievement.delete()
+        return Response({'message': 'Достижение удалено!'}, status=204)
+    
+class DeleteEmployeeAchievementApiView(APIView):
+    """Удаляет конкретное достижение сотрудника по его ID"""
+
+    def delete(self, request, achievement_id):
+        achievement = get_object_or_404(Employee_Achievment, id=achievement_id)
+        achievement.delete()
         return Response({'message': 'Достижение удалено!'}, status=204)
 
 class AchievmentApiView(generics.ListAPIView):

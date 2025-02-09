@@ -127,9 +127,9 @@ const sortedDepartmentData = computed(() => {
     <div class="grid grid-cols-2 items-center justify-items-center mt-4">
       <div class="grid grid-cols-2 items-center justify-items-center mt-4">
         <div
-          class="text-2xl p-4 h-16 border-slate-400 text-center text-white font-sm transition cursor-pointer bg-blue-900 rounded-t-md shadow-2xl"
+          class="text-2xl p-4 h-16 border-slate-400 text-center text-white font-sm transition cursor-pointer bg-blue-900 rounded-t-md shadow-2xl gap-2"
         >
-          Кафедры
+          Подразделения
         </div>
         <div
           class="text-2xl p-4 h-16 border-slate-300 border-x-2 border-t-2 text-center text-slate-400 font-sm transition cursor-pointer rounded-t-md shadow-2xl"

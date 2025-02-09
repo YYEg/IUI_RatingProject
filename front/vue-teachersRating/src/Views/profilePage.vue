@@ -3,13 +3,11 @@ import headerBlock from '../components/headerBlock.vue'
 import BaseTable from '@/components/Table/BaseTable.vue'
 import TableRow from '@/components/Table/TableRow.vue'
 import TableColumn from '@/components/Table/TableColumn.vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, reactive } from 'vue'
 import axios from 'axios'
 
-const achivmentsData = ref([]) // Достижения преподавателя
-const achievementData = ref([]) // Все достижения
-const scoresData = ref([]) // Стоимости достижений
-const teacherData = ref([]) // Данные преподавателя
+const achivmentsData = ref([])
+const allAchData = ref([])
 const userData = ref(null) // Данные пользователя
 const teacherId = ref(null) // ID преподавателя из данных пользователя
 const userName = ref(null)
@@ -18,22 +16,21 @@ const errorMessage = ref('')
 const userDepatment = ref(null)
 const token = ref(localStorage.getItem('token') || '')
 const selectedAchievement = ref(null)
+const inputed_meas_unit_val = ref('')
 const isModalOpen = ref(false)
 
 // Шапка и размеры таблицы
-const tableHeads = ['№', 'Достижение', 'Балл', '']
+const tableHeads = [
+  { key: 'id', label: '№' },
+  { key: 'name', label: 'Достижение' },
+  { key: 'score', label: 'Балл' }
+]
 const tableSizeColumns = '1fr 8fr 2fr 2fr'
-
-// Вычисляемое свойство для фильтрации достижений
-const filteredAchievements = computed(() => {
-  return achivmentsData.value.filter((achievement) => achievement.teacher_id === teacherId.value)
+const searchQuery = ref('')
+const sortBy = reactive({
+  column: 'score',
+  order: 'desc'
 })
-
-// Функция для получения текста достижения по его идентификатору
-const getAchievementText = (achievementId) => {
-  const achievement = achievementData.value.find((item) => item.id === achievementId)
-  return achievement ? achievement.name : 'Достижение не найдено'
-}
 
 // Получение данных пользователя
 const getUserData = async () => {
@@ -44,32 +41,39 @@ const getUserData = async () => {
       }
     })
     userData.value = response.data
-    console.log(userData.value)
-    teacherId.value = userData.value.teacher // Установите teacherId из userData
-    userName.value = userData.value.first_name
+    teacherId.value = userData.value.employee // Установите teacherId из userData
+    userName.value = userData.value.last_name
     userDepatment.value = userData.value.department
+
+    const achievementsResponse = await axios.get(
+      `http://127.0.0.1:8000/api/v1/employee_achievements/teachers/${teacherId.value}`
+    )
+    achivmentsData.value = achievementsResponse.data.achievements
+
+    const AllAchResp = await axios.get('http://127.0.0.1:8000/api/v1/achievments/')
+    allAchData.value = AllAchResp.data
+    console.log(allAchData.value)
   } catch (error) {
     console.error('Error fetching user data:', error)
   }
 }
+
 const deleteAchievement = async (achievementId) => {
   try {
     const response = await axios.delete(
-      `http://127.0.0.1:8000/api/v1/teacher_achivments/${achievementId}/`,
+      `http://127.0.0.1:8000/api/v1/delete_employee_achievement/${achievementId}/`, // Обновленный URL
       {
-        headers: {
-          Authorization: `Token ${token.value}`
-        }
+        headers: { Authorization: `Token ${token.value}` }
       }
     )
 
     console.log('Achievement deleted successfully:', response.data)
 
     // Обновляем список достижений после удаления
-    const teacherAchivmentsResponse = await axios.get(
-      'http://127.0.0.1:8000/api/v1/teacher_achivments/'
+    const achievementsResponse = await axios.get( // добавлен await
+      `http://127.0.0.1:8000/api/v1/employee_achievements/teachers/${teacherId.value}/`
     )
-    achivmentsData.value = teacherAchivmentsResponse.data
+    achivmentsData.value = achievementsResponse.data.achievements
 
     // Показываем сообщение об успешном удалении
     successMessage.value = 'Успешно удалено достижение!'
@@ -83,7 +87,7 @@ const deleteAchievement = async (achievementId) => {
     console.error('Error deleting achievement:', error)
 
     // Показываем сообщение об ошибке при удалении
-    errorMessage.value = 'Error deleting achievement. Please try again later.'
+    errorMessage.value = 'Ошибка при удалении достижения. Попробуйте позже.'
     successMessage.value = ''
 
     // Скрываем сообщение об ошибке после некоторого времени
@@ -93,47 +97,25 @@ const deleteAchievement = async (achievementId) => {
   }
 }
 
-// Основная загрузка данных
-const loadData = async () => {
-  try {
-    await getUserData() // Сначала получаем данные пользователя
-
-    if (!teacherId.value) {
-      throw new Error('Teacher ID not found in user data')
-    }
-
-    const [teacherAchivmentsResponse, achievementDataResponse, scoreDataResponce, teacherResponce] =
-      await Promise.all([
-        axios.get('http://127.0.0.1:8000/api/v1/teacher_achivments/'),
-        axios.get('http://127.0.0.1:8000/api/v1/achivments/'),
-        axios.get('http://127.0.0.1:8000/api/v1/score_values/'),
-        axios.get(`http://127.0.0.1:8000/api/v1/teachers/${teacherId.value}`)
-      ])
-
-    achivmentsData.value = teacherAchivmentsResponse.data
-    achievementData.value = achievementDataResponse.data
-    scoresData.value = scoreDataResponce.data
-    teacherData.value = teacherResponce.data
-  } catch (error) {
-    console.error('Error loading data:', error)
-  }
-}
 
 const addAchievement = async () => {
   try {
     const data = {
-      teacher_id: userData.value.department,
-      Achivment: selectedAchievement.value,
-      score: getAchievementScore(selectedAchievement.value)
+      employee: userData.value.employee,
+      achievment: selectedAchievement.value,
+      meas_unit_val: inputed_meas_unit_val.value,
+      verif_doc: 'Cсылка',
+      score: inputed_meas_unit_val.value * 2
+
     }
     console.log(data)
-    const response = await axios.post('http://127.0.0.1:8000/api/v1/teacher_achivments/', data, {
+    const response = await axios.post('http://127.0.0.1:8000/api/v1/employee_achievment/', data, {
       headers: {
         Authorization: `Token ${token.value}`
       }
     })
 
-    loadData()
+    getUserData()
 
     console.log('Achievement added successfully:', response.data)
 
@@ -170,21 +152,14 @@ const openModal = () => {
   isModalOpen.value = true
 }
 
-const getAchievementScore = (achievementId) => {
-  const score = scoresData.value.find((item) => item.Achivment === achievementId)
-  return score ? score.score : 0
-}
-
-onMounted(() => {
+onMounted(async () => {
   // Проверяем, есть ли токен
   if (!token.value) {
     // Если токена нет, перенаправляем на страницу авторизации
     window.location.href = '/login'
     return
   }
-
-  // Загружаем данные, если токен есть
-  loadData()
+  getUserData()
 })
 
 const setLogout = () => {
@@ -218,6 +193,38 @@ const downloadReport = async () => {
     console.error('Ошибка при скачивании отчета:', error)
   }
 }
+
+const filteredAchievements = computed(() => {
+  return achivmentsData.value.filter((achievement) =>
+    achievement.achievment_name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  )
+})
+
+const sortTable = (column) => {
+  if (sortBy.column === column) {
+    sortBy.order = sortBy.order === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.column = column
+    sortBy.order = 'desc'
+  }
+}
+
+const sortedAchievements = computed(() => {
+  return [...filteredAchievements.value].sort((a, b) => {
+    let aValue = a[sortBy.column]
+    let bValue = b[sortBy.column]
+
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return sortBy.order === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
+    } else {
+      return sortBy.order === 'asc' ? aValue - bValue : bValue - aValue
+    }
+  })
+})
+
+const totalScore = computed(() => {
+  return sortedAchievements.value.reduce((sum, achievement) => sum + achievement.score, 0)
+})
 </script>
 
 <template>
@@ -311,7 +318,7 @@ const downloadReport = async () => {
       </div>
     </div>
     <div class="p-2">
-      <base-table :head="tableHeads" :columnTemplates="tableSizeColumns">
+      <!-- <base-table :head="tableHeads" :columnTemplates="tableSizeColumns">
         <table-row
           v-for="(achievement, index) in filteredAchievements"
           :key="achievement.id"
@@ -331,12 +338,46 @@ const downloadReport = async () => {
             </button></TableColumn
           >
         </table-row>
-      </base-table>
+      </base-table> -->
 
-      <div class="m-auto grid grid-cols-2 items-center p-5 justify-items-center">
-        <div class="text-3xl text-blue-400 font-sm">Итого баллов:</div>
-        <div class="text-5xl text-blue-400 font-bold">0</div>
-      </div>
+      <BaseTable :columnTemplates="tableSizeColumns">
+        <TableRow :columnTemplates="tableSizeColumns">
+          <TableColumn
+            v-for="head in tableHeads"
+            :key="head.key"
+            @click="sortTable(head.key)"
+            class="cursor-pointer font-sm text-white"
+          >
+            {{ head.label }}
+            <span v-if="sortBy.column === head.key">
+              {{ sortBy.order === 'asc' ? '▲' : '▼' }}
+            </span>
+          </TableColumn>
+        </TableRow>
+
+        <template #body>
+          <TableRow
+            v-for="(achievement, index) in sortedAchievements"
+            :key="achievement.id"
+            :columnTemplates="tableSizeColumns"
+          >
+            <TableColumn>{{ index + 1 }}</TableColumn>
+            <TableColumn>{{ achievement.achievment_name }}</TableColumn>
+            <TableColumn>{{ achievement.score }}</TableColumn>
+            <TableColumn
+              ><button
+                @click="deleteAchievement(achievement.id)"
+                class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+              >
+                Удалить
+              </button></TableColumn
+            >
+          </TableRow>
+        </template>
+      </BaseTable>
+
+      <div class="text-center text-2xl font-bold mt-4">Итого баллов: {{ totalScore }}</div>
+
       <!-- Модальное окно -->
       <div
         v-if="isModalOpen"
@@ -350,13 +391,15 @@ const downloadReport = async () => {
 
           <select v-model="selectedAchievement" class="text-2xl mt-3 p-2 rounded-xl w-full">
             <option
-              v-for="achievement in achievementData"
+              v-for="achievement in allAchData"
               :key="achievement.id"
               :value="achievement.id"
             >
-              {{ getAchievementScore(achievement.id) }} баллов | {{ achievement.name }}
+              {{ achievement.name }}
             </option>
           </select>
+
+          <input v-model="inputed_meas_unit_val" placeholder="Единица измерения..." />
 
           <div
             class="w-full mt-2 shadow-2xl text-center text-2xl font-bold transition hover:scale-105 cursor-pointer p-2 rounded-2xl border-2 border-black"

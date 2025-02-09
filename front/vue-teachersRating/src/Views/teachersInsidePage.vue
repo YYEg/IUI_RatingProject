@@ -24,7 +24,7 @@ const employeeId = route.params.id
 
 onMounted(async () => {
   try {
-    const achievementsResponse = await axios.get(`http://127.0.0.1:8000/api/v1/achivments_of_employee/${employeeId}`)
+    const achievementsResponse = await axios.get(`http://127.0.0.1:8000/api/v1/employee_achievements/teachers/${employeeId}`)
     achievementsData.value = achievementsResponse.data.achievements
     console.log(achievementsData.value)
   } catch (error) {
@@ -123,12 +123,18 @@ const totalScore = computed(() => {
       </form>
     </div>
 
-      <div class="grid grid-cols-2 mt-4 mx-4 gap-2">
+      <div class="grid grid-cols-3 mt-4 mx-4 gap-2">
       <div
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="() => $router.push('/')"
       >
         Назад
+      </div>
+      <div
+        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
+        @click="downloadReport"
+      >
+        Вывести данные в отчет
       </div>
       <div
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
