@@ -13,6 +13,8 @@ const tableHeads = [
   { key: 'score', label: 'Балл' }
 ]
 const tableSizeColumns = '1fr 8fr 3fr'
+const isLoggedIn = computed(() => !!token.value)
+const token = ref(localStorage.getItem('token') || '')
 const achievementsData = ref([])
 const searchQuery = ref('')
 const sortBy = reactive({
@@ -24,7 +26,9 @@ const employeeId = route.params.id
 
 onMounted(async () => {
   try {
-    const achievementsResponse = await axios.get(`http://127.0.0.1:8000/api/v1/employee_achievements/teachers/${employeeId}`)
+    const achievementsResponse = await axios.get(
+      `http://127.0.0.1:8000/api/v1/employe_achievments/employee/${employeeId}`
+    )
     achievementsData.value = achievementsResponse.data.achievements
     console.log(achievementsData.value)
   } catch (error) {
@@ -165,8 +169,12 @@ const totalScore = computed(() => {
           :key="achievement.id"
           :columnTemplates="tableSizeColumns"
         >
-          <TableColumn>{{ index + 1 }}</TableColumn>
-          <TableColumn>{{ achievement.achievment_name }}</TableColumn>
+          <TableColumn>{{ achievement.number }}</TableColumn>
+          <TableColumn class="cursor-pointer">
+            <router-link :to="{ name: 'achievmentDetailed', params: { ach_id: achievement.id, empl_id: employeeId } }">
+              {{ achievement.achievment_name }}
+            </router-link>
+          </TableColumn>
           <TableColumn>{{ achievement.score }}</TableColumn>
         </TableRow>
       </template>

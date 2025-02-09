@@ -37,9 +37,11 @@ class Achievment(models.Model):
 class Employee_Achievment(models.Model):
     employee = models.ForeignKey('Employee', on_delete=models.PROTECT, null=False)
     achievment = models.ForeignKey('Achievment', on_delete=models.PROTECT, null=False)
+    full_achivment_name = models.CharField(max_length=300)
     meas_unit_val = models.CharField(max_length=50)
     score = models.FloatField(default=0.0)
     # Подтверждающий документ
+
     verif_doc = models.CharField(max_length=1000)
-    # reciving_date = models.DateField()
+    reciving_date = models.DateField()
    

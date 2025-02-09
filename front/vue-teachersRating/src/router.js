@@ -8,6 +8,7 @@ import profilePage from './Views/profilePage.vue'
 import addAchievements from './Views/addAchivmnetPage.vue'
 import testRating from './components/testRating.vue'
 import TeachersInsidePage from './Views/teachersInsidePage.vue'
+import achievmentDetailed from './Views/achievmentDetailed.vue'
 
 export default createRouter({
   history: createWebHistory(),
@@ -54,6 +55,11 @@ export default createRouter({
       path: '/profile/addAchievements',
       name: 'addAchievements',
       component: addAchievements
+    },
+    {
+      path: '/employee/:empl_id/achievment/:ach_id',
+      name: 'achievmentDetailed',
+      component: achievmentDetailed
     },
   ]
 })

@@ -12,10 +12,6 @@ from django.db.models import Sum
 from django.db.models import F, Window
 from django.db.models.functions import Rank
 
-# class EmployeeApiView(generics.ListAPIView):
-#     queryset = Employee.objects.all()
-#     serializer_class = EmployeeSerializer
-
 class EmployeeApiView(APIView):
     def get(self, request):
         employees = Employee.objects.annotate(
@@ -213,3 +209,72 @@ class UserProfileView(APIView):
             'employee': user.employee_id
         }
         return Response(user_data)
+    
+class ProfileEmployeeAchievementsApiView(APIView):
+    def get(self, request, employee_id):
+        """Возвращает список всех достижений сотрудника, суммируя баллы, если они есть у сотрудника."""
+        employee = get_object_or_404(Employee, id=employee_id)
+        all_achievements = Achievment.objects.all()
+
+        # Получаем достижения сотрудника
+        employee_achievements = Employee_Achievment.objects.filter(employee=employee)
+
+        # Создаем словарь для суммирования баллов по каждому достижению
+        achievements_score = {}
+
+        # Суммируем баллы для каждого достижения
+        for emp_ach in employee_achievements:
+            if emp_ach.achievment.id not in achievements_score:
+                achievements_score[emp_ach.achievment.id] = 0
+            achievements_score[emp_ach.achievment.id] += emp_ach.score  # Суммируем баллы для достижения
+
+        achievements_data = []
+
+        for achievement in all_achievements:
+            # Получаем суммарные баллы для текущего достижения
+            total_score = achievements_score.get(achievement.id, 0)  # Если достижения нет у сотрудника, ставим 0
+
+            # Добавляем достижение с нужными данными
+            achievements_data.append({
+                'id': achievement.id,
+                'number': achievement.number,
+                'achievment_name': achievement.name,
+                'score': total_score,  # Сумма баллов для достижения
+                'meas_unit_val': None,  # Пример, если вам нужно оставить данные
+                'verif_doc': None,  # Пример
+            })
+
+        return Response({'employee': employee.surname, 'achievements': achievements_data})
+
+    
+class EmployeeAchievementByAchievmentApiView(APIView):
+    def get(self, request, employee_id, achievment_id):
+        # Получаем сотрудника и достижение по ID
+        employee = get_object_or_404(Employee, id=employee_id)
+        achievment = get_object_or_404(Achievment, id=achievment_id)
+
+        # Фильтруем достижения сотрудника, соответствующие данному достижению
+        achievements = Employee_Achievment.objects.filter(employee=employee, achievment=achievment)
+
+        # Если достижения не найдены
+        if not achievements.exists():
+            return Response({'error': 'Достижения не найдены для данного сотрудника и достижения'}, status=404)
+
+        # Сериализуем данные
+        achievements_data = [
+            {
+                'id': ach.id,
+                'employee_id': ach.employee.id,
+                'achievment_name': ach.achievment.name,
+                'full_name': ach.full_achivment_name,
+                'score': ach.score,
+                'meas_unit_val': ach.meas_unit_val,
+                'verif_doc': ach.verif_doc,
+                # Добавьте остальные поля по необходимости
+            }
+            for ach in achievements
+        ]
+
+        return Response({'employee': employee.surname, 'achievment': achievment.name, 'achievements': achievements_data})
+
+

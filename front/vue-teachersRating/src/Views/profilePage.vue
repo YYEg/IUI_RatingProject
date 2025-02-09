@@ -25,7 +25,7 @@ const tableHeads = [
   { key: 'name', label: 'Достижение' },
   { key: 'score', label: 'Балл' }
 ]
-const tableSizeColumns = '1fr 8fr 2fr 2fr'
+const tableSizeColumns = '1fr 8fr 2fr'
 const searchQuery = ref('')
 const sortBy = reactive({
   column: 'score',
@@ -42,13 +42,15 @@ const getUserData = async () => {
     })
     userData.value = response.data
     teacherId.value = userData.value.employee // Установите teacherId из userData
+    console.log(teacherId.value)
     userName.value = userData.value.last_name
     userDepatment.value = userData.value.department
 
     const achievementsResponse = await axios.get(
-      `http://127.0.0.1:8000/api/v1/employee_achievements/teachers/${teacherId.value}`
+      `http://127.0.0.1:8000/api/v1/employe_achievments/employee/${teacherId.value}`
     )
     achivmentsData.value = achievementsResponse.data.achievements
+    console.log(achievementsResponse.data)
 
     const AllAchResp = await axios.get('http://127.0.0.1:8000/api/v1/achievments/')
     allAchData.value = AllAchResp.data
@@ -58,46 +60,6 @@ const getUserData = async () => {
   }
 }
 
-const deleteAchievement = async (achievementId) => {
-  try {
-    const response = await axios.delete(
-      `http://127.0.0.1:8000/api/v1/delete_employee_achievement/${achievementId}/`, // Обновленный URL
-      {
-        headers: { Authorization: `Token ${token.value}` }
-      }
-    )
-
-    console.log('Achievement deleted successfully:', response.data)
-
-    // Обновляем список достижений после удаления
-    const achievementsResponse = await axios.get( // добавлен await
-      `http://127.0.0.1:8000/api/v1/employee_achievements/teachers/${teacherId.value}/`
-    )
-    achivmentsData.value = achievementsResponse.data.achievements
-
-    // Показываем сообщение об успешном удалении
-    successMessage.value = 'Успешно удалено достижение!'
-    errorMessage.value = ''
-
-    // Скрываем сообщение об успешном удалении после некоторого времени
-    setTimeout(() => {
-      successMessage.value = ''
-    }, 3000)
-  } catch (error) {
-    console.error('Error deleting achievement:', error)
-
-    // Показываем сообщение об ошибке при удалении
-    errorMessage.value = 'Ошибка при удалении достижения. Попробуйте позже.'
-    successMessage.value = ''
-
-    // Скрываем сообщение об ошибке после некоторого времени
-    setTimeout(() => {
-      errorMessage.value = ''
-    }, 3000)
-  }
-}
-
-
 const addAchievement = async () => {
   try {
     const data = {
@@ -106,7 +68,6 @@ const addAchievement = async () => {
       meas_unit_val: inputed_meas_unit_val.value,
       verif_doc: 'Cсылка',
       score: inputed_meas_unit_val.value * 2
-
     }
     console.log(data)
     const response = await axios.post('http://127.0.0.1:8000/api/v1/employee_achievment/', data, {
@@ -160,6 +121,7 @@ onMounted(async () => {
     return
   }
   getUserData()
+  console.log(teacherId.value)
 })
 
 const setLogout = () => {
@@ -209,6 +171,13 @@ const sortTable = (column) => {
   }
 }
 
+// Вычисляемый список с фильтрацией и сортировкой
+const filteredDepartmentData = computed(() => {
+  return departmentData.value.filter((department) =>
+    department.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  )
+})
+
 const sortedAchievements = computed(() => {
   return [...filteredAchievements.value].sort((a, b) => {
     let aValue = a[sortBy.column]
@@ -244,31 +213,15 @@ const totalScore = computed(() => {
         </div>
       </div>
     </headerBlock>
+
     <div class="flex grid grid-cols-2 items-center mt-4 mx-4">
       <div class="relative">
         <input
-          class="appearance-none border-2 pl-10 border-gray-300 hover:border-gray-400 transition-colors rounded-md w-full py-2 px-3 text-gray-800 leading-tight focus:outline-none focus:ring-purple-600 focus:border-purple-600 focus:shadow-outline"
-          id="username"
+          v-model="searchQuery"
+          class="appearance-none border-2 pl-10 border-gray-300 hover:border-gray-400 transition-colors rounded-md w-full py-2 px-3 text-gray-800 leading-tight focus:outline-none focus:ring-blue-900 focus:border-blue-900 focus:shadow-outline"
           type="text"
           placeholder="Search..."
         />
-        <div class="absolute right-0 inset-y-0 flex items-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="-ml-1 mr-3 h-5 w-5 text-gray-400 hover:text-gray-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </div>
-
         <div class="absolute left-0 inset-y-0 flex items-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -297,6 +250,7 @@ const totalScore = computed(() => {
         </select>
       </form>
     </div>
+
     <div class="grid grid-cols-3 mt-4 mx-4">
       <div
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
@@ -318,28 +272,6 @@ const totalScore = computed(() => {
       </div>
     </div>
     <div class="p-2">
-      <!-- <base-table :head="tableHeads" :columnTemplates="tableSizeColumns">
-        <table-row
-          v-for="(achievement, index) in filteredAchievements"
-          :key="achievement.id"
-          :columnTemplates="tableSizeColumns"
-        >
-          <table-column>{{ index + 1 }}</table-column>
-          <table-column>
-            {{ getAchievementText(achievement.Achivment_id) }}
-          </table-column>
-          <table-column>{{ getAchievementScore(achievement.Achivment_id) }}</table-column>
-          <TableColumn
-            ><button
-              @click="deleteAchievement(achievement.id)"
-              class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
-            >
-              Удалить
-            </button></TableColumn
-          >
-        </table-row>
-      </base-table> -->
-
       <BaseTable :columnTemplates="tableSizeColumns">
         <TableRow :columnTemplates="tableSizeColumns">
           <TableColumn
@@ -361,17 +293,18 @@ const totalScore = computed(() => {
             :key="achievement.id"
             :columnTemplates="tableSizeColumns"
           >
-            <TableColumn>{{ index + 1 }}</TableColumn>
-            <TableColumn>{{ achievement.achievment_name }}</TableColumn>
-            <TableColumn>{{ achievement.score }}</TableColumn>
-            <TableColumn
-              ><button
-                @click="deleteAchievement(achievement.id)"
-                class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+            <TableColumn>{{ achievement.number }}</TableColumn>
+            <TableColumn class="cursor-pointer">
+              <router-link
+                :to="{
+                  name: 'achievmentDetailed',
+                  params: { ach_id: achievement.id, empl_id: teacherId }
+                }"
               >
-                Удалить
-              </button></TableColumn
-            >
+                {{ achievement.achievment_name }}
+              </router-link>
+            </TableColumn>
+            <TableColumn>{{ achievement.score }}</TableColumn>
           </TableRow>
         </template>
       </BaseTable>
@@ -390,11 +323,7 @@ const totalScore = computed(() => {
           </div>
 
           <select v-model="selectedAchievement" class="text-2xl mt-3 p-2 rounded-xl w-full">
-            <option
-              v-for="achievement in allAchData"
-              :key="achievement.id"
-              :value="achievement.id"
-            >
+            <option v-for="achievement in allAchData" :key="achievement.id" :value="achievement.id">
               {{ achievement.name }}
             </option>
           </select>
