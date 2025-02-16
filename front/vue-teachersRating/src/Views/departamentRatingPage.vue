@@ -134,7 +134,7 @@ const sortedDepartmentData = computed(() => {
         <div
           class="text-2xl p-4 h-16 border-slate-300 border-x-2 border-t-2 text-center text-slate-400 font-sm transition cursor-pointer rounded-t-md shadow-2xl"
         >
-          <a href="/teachersRatingPage">Преподаватели</a>
+          <a href="/teachersRatingPage">Сотрудники</a>
         </div>
       </div>
     </div>

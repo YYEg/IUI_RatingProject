@@ -139,7 +139,7 @@ onMounted(async () => {
           <a href="/departamentRatingPage">Подразделения</a>
         </div>
         <div class="text-2xl p-4 h-16 border-slate-400 text-center text-white font-sm transition cursor-pointer bg-blue-900 rounded-t-md shadow-2xl">
-          Преподаватели
+          Сотрудники
         </div>
       </div>
     </div>
