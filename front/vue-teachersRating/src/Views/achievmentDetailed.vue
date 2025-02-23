@@ -21,7 +21,7 @@ const tableHeads = [
   { key: 'name', label: 'Достижение' },
   { key: 'score', label: 'Балл' }
 ]
-const tableSizeColumns = '1fr 8fr 2fr 2fr'
+const tableSizeColumns = '1fr 5fr 2fr 2fr 2fr 2fr'
 const searchQuery = ref('')
 const sortBy = reactive({
   column: 'score',
@@ -36,7 +36,6 @@ const getUserData = async () => {
     )
     achivmentsData.value = achievementsResponse.data.achievements
     console.log(achivmentsData.value)
-
   } catch (error) {
     console.error('Error fetching user data:', error)
   }
@@ -136,17 +135,68 @@ const filteredDepartmentData = computed(() => {
 const totalScore = computed(() => {
   return sortedAchievements.value.reduce((sum, achievement) => sum + achievement.score, 0)
 })
+
+const downloadDocument = async (achievementRecordId) => {
+  try {
+    const response = await axios.get(
+      `http://127.0.0.1:8000/download/${achievementRecordId}/`,
+      {
+        headers: {
+          Authorization: `Token ${token.value}`
+        },
+        responseType: 'blob' // Важно для загрузки файлов
+      }
+    )
+
+    // Проверка на успешный ответ (200 OK)
+    if (response.status === 200) {
+      const contentDisposition = response.headers['content-disposition']
+      const contentType = response.headers['content-type'] // Получаем тип контента из заголовков
+      const fileName = contentDisposition
+        ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+        : `document_${achievementRecordId}`
+
+      // Создаем объект Blob из полученных данных
+      const blob = new Blob([response.data], { type: contentType })
+
+      // Создаем ссылку для скачивания файла
+      const url = URL.createObjectURL(blob)
+
+      // Создаем ссылку для скачивания и программно "кликаем" по ней
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName // Используем имя файла из content-disposition или генерируем собственное
+      document.body.appendChild(link)
+      link.click()
+
+      // Очищаем память от созданного объекта URL
+      URL.revokeObjectURL(url)
+      document.body.removeChild(link) // Убираем элемент ссылки из DOM
+    } else {
+      throw new Error('Ошибка при получении документа')
+    }
+  } catch (error) {
+    console.error('Ошибка при скачивании документа:', error)
+  }
+}
+
+
 </script>
 
 <template>
   <div class="h-full">
     <headerBlock>
-      <div class="grid grid-cols-1">
+      <div class="flex justify-end">
         <div
-          class="ml-4 flex justify-center items-center text-black bg-white text-2xl p-4 text-center font-sm transition hover:scale-105 cursor-pointer bg-blue-900 rounded-2xl shadow-2xl"
-          @click="setLogout()"
+          class="flex justify-end w-80 p-4 transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
+          @click="() => $router.push('/profile')"
         >
-          Выйти
+          <div
+            class="w-full flex justify-center items-center text-black text-3xl text-center font-sm"
+          >
+            Личный кабинет
+          </div>
+          <img src="../assets/profile.png" alt="Логотип" class="mr-4 h-20 w-auto" />
         </div>
       </div>
     </headerBlock>
@@ -196,7 +246,6 @@ const totalScore = computed(() => {
       </div>
     </div>
     <div class="p-2">
-
       <BaseTable :columnTemplates="tableSizeColumns">
         <TableRow :columnTemplates="tableSizeColumns">
           <TableColumn
@@ -221,7 +270,7 @@ const totalScore = computed(() => {
             <TableColumn>{{ index + 1 }}</TableColumn>
             <TableColumn class="cursor-pointer">
               {{ achievement.full_name }}
-          </TableColumn>
+            </TableColumn>
             <TableColumn>{{ achievement.score }}</TableColumn>
             <TableColumn
               ><button
@@ -231,6 +280,18 @@ const totalScore = computed(() => {
                 Удалить
               </button></TableColumn
             >
+            <TableColumn>
+              <button
+              v-if="achievement.verif_doc != null"
+                @click="downloadDocument(achievement.id)"
+                class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+              >
+                Скачать документ
+              </button>
+            </TableColumn>
+            <TableColumn>
+              {{ achievement.verif_link }}
+            </TableColumn>
           </TableRow>
         </template>
       </BaseTable>

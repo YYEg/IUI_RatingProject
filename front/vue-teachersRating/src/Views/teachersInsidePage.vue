@@ -17,14 +17,25 @@ const isLoggedIn = computed(() => !!token.value)
 const token = ref(localStorage.getItem('token') || '')
 const achievementsData = ref([])
 const searchQuery = ref('')
+const role = computed(() => localStorage.getItem('role'))
+const auth_user_department = computed(() => localStorage.getItem('department'))
+const employee_department = ref('')
 const sortBy = reactive({
   column: 'score',
   order: 'desc'
 })
 const route = useRoute()
 const employeeId = route.params.id
+// Флаг для отображения блока
+const canDisplayBlock = ref(false)
 
 onMounted(async () => {
+  // Проверяем, есть ли токен
+  if (!token.value) {
+    // Если токена нет, перенаправляем на страницу авторизации
+    window.location.href = '/login'
+    return
+  }
   try {
     const achievementsResponse = await axios.get(
       `http://127.0.0.1:8000/api/v1/employe_achievments/employee/${employeeId}`
@@ -34,10 +45,22 @@ onMounted(async () => {
   } catch (error) {
     console.error(error)
   }
+  try {
+    const emp_response = await axios.get(`http://127.0.0.1:8000/api/v1/employees/${employeeId}`)
+    employee_department.value = emp_response.data.department.id
+  } catch (error) {
+    console.error(error)
+  }
+  canDisplayBlock.value =
+    role.value === 'ADMIN' ||
+      role.value === 'OTV' ||
+      (role.value === 'ZAV' &&
+        String(employee_department.value) === String(auth_user_department.value))
+  
 })
 
 const filteredAchievements = computed(() => {
-  return achievementsData.value.filter(achievement =>
+  return achievementsData.value.filter((achievement) =>
     achievement.achievment_name.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
@@ -55,7 +78,7 @@ const sortedAchievements = computed(() => {
   return [...filteredAchievements.value].sort((a, b) => {
     let aValue = a[sortBy.column]
     let bValue = b[sortBy.column]
-    
+
     if (typeof aValue === 'string' && typeof bValue === 'string') {
       return sortBy.order === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
     } else {
@@ -72,20 +95,17 @@ const totalScore = computed(() => {
 <template>
   <div class="m-auto mt-10">
     <headerBlock>
-      <div class="flex justify-center">
+      <div class="flex justify-end">
         <div
-          v-if="isLoggedIn"
-          class="w-full flex justify-center items-center text-black text-2xl p-4 text-center font-sm transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
+          class="flex justify-end w-80 p-4 transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
           @click="() => $router.push('/profile')"
         >
-          Личный кабинет
-        </div>
-        <div
-          v-else
-          class="w-full flex justify-center items-center text-black text-2xl p-4 text-center font-sm transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
-          @click="() => $router.push('/login')"
-        >
-          Войти
+          <div
+            class="w-full flex justify-center items-center text-black text-3xl text-center font-sm"
+          >
+            Личный кабинет
+          </div>
+          <img src="../assets/profile.png" alt="Логотип" class="mr-4 h-20 w-auto" />
         </div>
       </div>
     </headerBlock>
@@ -127,20 +147,22 @@ const totalScore = computed(() => {
       </form>
     </div>
 
-      <div class="grid grid-cols-3 mt-4 mx-4 gap-2">
+    <div class="grid grid-cols-3 mt-4 mx-4 gap-2">
       <div
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
-        @click="() => $router.push('/')"
+        @click="() => $router.go(-1)"
       >
         Назад
       </div>
       <div
+        v-if="canDisplayBlock"
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="downloadReport"
       >
         Вывести данные в отчет
       </div>
       <div
+        v-if="canDisplayBlock"
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="downloadReport"
       >
@@ -171,7 +193,12 @@ const totalScore = computed(() => {
         >
           <TableColumn>{{ achievement.number }}</TableColumn>
           <TableColumn class="cursor-pointer">
-            <router-link :to="{ name: 'achievmentDetailed', params: { ach_id: achievement.id, empl_id: employeeId } }">
+            <router-link
+              :to="{
+                name: 'achievmentDetailed',
+                params: { ach_id: achievement.id, empl_id: employeeId }
+              }"
+            >
               {{ achievement.achievment_name }}
             </router-link>
           </TableColumn>

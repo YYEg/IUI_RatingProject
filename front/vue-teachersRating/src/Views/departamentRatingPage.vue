@@ -27,6 +27,12 @@ const sortBy = reactive({
 })
 
 onMounted(async () => {
+  // Проверяем, есть ли токен
+  if (!token.value) {
+    // Если токена нет, перенаправляем на страницу авторизации
+    window.location.href = '/login'
+    return
+  }
   try {
     const response = await axios.get('http://127.0.0.1:8000/api/v1/department_ratings/')
     departmentData.value = response.data
@@ -47,7 +53,7 @@ const sortTable = (column) => {
 
 // Вычисляемый список с фильтрацией и сортировкой
 const filteredDepartmentData = computed(() => {
-  return departmentData.value.filter(department =>
+  return departmentData.value.filter((department) =>
     department.name.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
@@ -69,20 +75,17 @@ const sortedDepartmentData = computed(() => {
 <template>
   <div class="h-screen m-auto mt-10">
     <headerBlock>
-      <div class="flex justify-center">
+      <div class="flex justify-end">
         <div
-          v-if="isLoggedIn"
-          class="w-full flex justify-center items-center text-black text-2xl p-4 text-center font-sm transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
+          class="flex justify-end w-80 p-4 transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
           @click="() => $router.push('/profile')"
         >
-          Личный кабинет
-        </div>
-        <div
-          v-else
-          class="w-full flex justify-center items-center text-black text-2xl p-4 text-center font-sm transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
-          @click="() => $router.push('/login')"
-        >
-          Войти
+          <div
+            class="w-full flex justify-center items-center text-black text-3xl text-center font-sm"
+          >
+            Личный кабинет
+          </div>
+          <img src="../assets/profile.png" alt="Логотип" class="mr-4 h-20 w-auto" />
         </div>
       </div>
     </headerBlock>

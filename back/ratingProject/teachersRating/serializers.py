@@ -11,12 +11,13 @@ class DepartmentSerializer(serializers.ModelSerializer):
         model = Department
         fields = ('id', 'name')
 
-class Employee_AchievmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Employee_Achievment
-        fields = ('id', 'achievment', 'employee', 'meas_unit_val', 'score', 'verif_doc')
 
 class AchievmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Achievment
         fields = ('id', 'name', 'meas_unit', 'meas_unit_score', 'verif_doc_info')
+
+class Employee_AchievmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee_Achievment
+        fields = '__all__'

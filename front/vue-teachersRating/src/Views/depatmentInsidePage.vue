@@ -20,9 +20,13 @@ const tableSizeColumns = '1fr 8fr 3fr 3fr'
 const employeesData = ref([])
 const depData = ref([])
 const isLoggedIn = computed(() => !!token.value)
+const role = computed(() => localStorage.getItem('role'))
+const auth_user_department = computed(() => localStorage.getItem('department'))
 const token = ref(localStorage.getItem('token') || '')
 const searchQuery = ref('')
 const selectedPeriod = ref('01.09.2024-31.08.2025')
+// Флаг для отображения блока
+const canDisplayBlock = ref(false)
 
 const sortBy = reactive({
   column: 'total_score',
@@ -31,11 +35,11 @@ const sortBy = reactive({
 
 // Фильтрация данных
 const filteredEmployees = computed(() => {
-  return employeesData.value.filter(employee => {
-    const fullName = `${employee.surname} ${employee.name} ${employee.parentName}`.toLowerCase();
-    return fullName.includes(searchQuery.value.toLowerCase());
-  });
-});
+  return employeesData.value.filter((employee) => {
+    const fullName = `${employee.surname} ${employee.name} ${employee.parentName}`.toLowerCase()
+    return fullName.includes(searchQuery.value.toLowerCase())
+  })
+})
 
 // Функция сортировки
 const sortTable = (column) => {
@@ -51,7 +55,7 @@ const sortTable = (column) => {
 const sortedEmployees = computed(() => {
   return [...filteredEmployees.value].sort((a, b) => {
     let aValue, bValue
-    
+
     if (sortBy.column === 'fullName') {
       aValue = `${a.surname} ${a.name} ${a.parentName}`.toLowerCase()
       bValue = `${b.surname} ${b.name} ${b.parentName}`.toLowerCase()
@@ -70,34 +74,48 @@ const sortedEmployees = computed(() => {
 
 // Вытягиваю данные с бэка для сотрудников конкретной кафедры
 onMounted(async () => {
+  // Проверяем, есть ли токен
+  if (!token.value) {
+    // Если токена нет, перенаправляем на страницу авторизации
+    window.location.href = '/login'
+    return
+  }
   try {
-    const employeeResponse = await axios.get(`http://127.0.0.1:8000/api/v1/departments/${departmentId}/teachers/`)
+    const employeeResponse = await axios.get(
+      `http://127.0.0.1:8000/api/v1/departments/${departmentId}/teachers/`
+    )
     employeesData.value = employeeResponse.data
-    const response_dep = await axios.get(`http://127.0.0.1:8000/api/v1/departments/${departmentId}/`)
+    const response_dep = await axios.get(
+      `http://127.0.0.1:8000/api/v1/departments/${departmentId}/`
+    )
     depData.value = response_dep.data
   } catch (error) {
     console.log(error)
   }
+  console.log(departmentId)
+
+  canDisplayBlock.value =
+    role.value === 'ADMIN' ||
+    role.value === 'OTV' ||
+    (role.value === 'ZAV' &&
+      String(departmentId) === String(auth_user_department.value))
 })
 </script>
 
 <template>
   <div class="m-auto mt-10">
     <headerBlock>
-      <div class="flex justify-center">
+      <div class="flex justify-end">
         <div
-          v-if="isLoggedIn"
-          class="w-full flex justify-center items-center text-black text-2xl p-4 text-center font-sm transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
+          class="flex justify-end w-80 p-4 transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
           @click="() => $router.push('/profile')"
         >
-          Личный кабинет
-        </div>
-        <div
-          v-else
-          class="w-full flex justify-center items-center text-black text-2xl p-4 text-center font-sm transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
-          @click="() => $router.push('/login')"
-        >
-          Войти
+          <div
+            class="w-full flex justify-center items-center text-black text-3xl text-center font-sm"
+          >
+            Личный кабинет
+          </div>
+          <img src="../assets/profile.png" alt="Логотип" class="mr-4 h-20 w-auto" />
         </div>
       </div>
     </headerBlock>
@@ -139,19 +157,20 @@ onMounted(async () => {
       </form>
     </div>
 
-    <div class="grid grid-cols-3 my-4 mx-4 ">
+    <div class="grid grid-cols-3 my-4 mx-4">
       <div
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
-        @click="() => $router.push('/')"
+        @click="() => $router.go(-1)"
       >
         Назад
       </div>
       <div
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm rounded-2xl shadow-2xl border-2 border-slate-400"
       >
-        {{depData.name}}
+        {{ depData.name }}
       </div>
       <div
+        v-if="canDisplayBlock"
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="downloadReport"
       >

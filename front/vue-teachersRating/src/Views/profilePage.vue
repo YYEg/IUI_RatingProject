@@ -3,7 +3,7 @@ import headerBlock from '../components/headerBlock.vue'
 import BaseTable from '@/components/Table/BaseTable.vue'
 import TableRow from '@/components/Table/TableRow.vue'
 import TableColumn from '@/components/Table/TableColumn.vue'
-import { computed, onMounted, ref, reactive } from 'vue'
+import { computed, onMounted, ref, reactive, watch } from 'vue'
 import axios from 'axios'
 
 const achivmentsData = ref([])
@@ -15,8 +15,13 @@ const successMessage = ref('')
 const errorMessage = ref('')
 const userDepatment = ref(null)
 const token = ref(localStorage.getItem('token') || '')
+const role = computed(() => localStorage.getItem('role'))
 const selectedAchievement = ref(null)
+const meas_unit = ref('')
 const inputed_meas_unit_val = ref('')
+const inputed_name = ref('')
+const inputed_ver_link = ref('')
+const inputed_doc_ver_link = ref('')
 const isModalOpen = ref(false)
 
 // Шапка и размеры таблицы
@@ -42,7 +47,9 @@ const getUserData = async () => {
     })
     userData.value = response.data
     teacherId.value = userData.value.employee // Установите teacherId из userData
-    console.log(teacherId.value)
+    localStorage.setItem('role', userData.value.role)
+    localStorage.setItem('department', userData.value.department)
+    role.value = localStorage.role
     userName.value = userData.value.last_name
     userDepatment.value = userData.value.department
 
@@ -50,11 +57,9 @@ const getUserData = async () => {
       `http://127.0.0.1:8000/api/v1/employe_achievments/employee/${teacherId.value}`
     )
     achivmentsData.value = achievementsResponse.data.achievements
-    console.log(achievementsResponse.data)
 
     const AllAchResp = await axios.get('http://127.0.0.1:8000/api/v1/achievments/')
     allAchData.value = AllAchResp.data
-    console.log(allAchData.value)
   } catch (error) {
     console.error('Error fetching user data:', error)
   }
@@ -62,47 +67,45 @@ const getUserData = async () => {
 
 const addAchievement = async () => {
   try {
-    const data = {
-      employee: userData.value.employee,
-      achievment: selectedAchievement.value,
-      meas_unit_val: inputed_meas_unit_val.value,
-      verif_doc: 'Cсылка',
-      score: inputed_meas_unit_val.value * 2
-    }
-    console.log(data)
+    const data = new FormData();
+    data.append('employee', userData.value.employee);
+    data.append('achievment', selectedAchievement.value);
+    data.append('meas_unit_val', inputed_meas_unit_val.value);
+    data.append('verif_doc', inputed_doc_ver_link.value);  // Добавляем файл
+    data.append('verif_link', inputed_ver_link.value);
+    data.append('full_achivment_name', inputed_name.value);
+    data.append('score', inputed_meas_unit_val.value * 2);
+    data.append('reciving_date', new Date().toISOString().split('T')[0]);
+
     const response = await axios.post('http://127.0.0.1:8000/api/v1/employee_achievment/', data, {
       headers: {
-        Authorization: `Token ${token.value}`
+        Authorization: `Token ${token.value}`,
+        'Content-Type': 'multipart/form-data'  // Указываем, что отправляем FormData
       }
-    })
+    });
 
-    getUserData()
+    getUserData();
+    console.log('Achievement added successfully:', response.data);
 
-    console.log('Achievement added successfully:', response.data)
+    selectedAchievement.value = null;
 
-    // Очистить выбранное достижение после добавления
-    selectedAchievement.value = null
+    successMessage.value = 'Успешно добавлено достижение!';
+    errorMessage.value = '';
 
-    // Показать сообщение об успехе
-    successMessage.value = 'Успешно добавлено достижение!'
-    errorMessage.value = '' // Обнуляем ошибку, если запрос успешен
-
-    // Скрыть сообщение через некоторое время
     setTimeout(() => {
-      successMessage.value = ''
-    }, 3000)
+      successMessage.value = '';
+    }, 3000);
   } catch (error) {
-    console.error('Ошибка при добавлении достижения:', error)
-    // Устанавливаем сообщение об ошибке только при наличии ошибки
-    errorMessage.value = 'Ошибка при добавлении достижения!'
-    successMessage.value = ''
+    console.error('Ошибка при добавлении достижения:', error);
+    errorMessage.value = 'Ошибка при добавлении достижения!';
+    successMessage.value = '';
 
-    // Скрыть сообщение об ошибке через некоторое время
     setTimeout(() => {
-      errorMessage.value = ''
-    }, 3000)
+      errorMessage.value = '';
+    }, 3000);
   }
 }
+
 
 const closeModal = () => {
   isModalOpen.value = false
@@ -121,11 +124,12 @@ onMounted(async () => {
     return
   }
   getUserData()
-  console.log(teacherId.value)
 })
 
 const setLogout = () => {
   localStorage.removeItem('token')
+  localStorage.removeItem('role')
+  localStorage.removeItem('department')
   window.location.href = '/login'
 }
 
@@ -194,6 +198,30 @@ const sortedAchievements = computed(() => {
 const totalScore = computed(() => {
   return sortedAchievements.value.reduce((sum, achievement) => sum + achievement.score, 0)
 })
+
+const onAchievementChange = async () => {
+  if (selectedAchievement.value) {
+    try {
+      const achievement = allAchData.value.find((ach) => ach.id === selectedAchievement.value)
+
+      if (achievement) {
+        meas_unit.value = achievement.meas_unit || '' // Подставляем mes_unit
+      }
+    } catch (error) {
+      console.error('Ошибка при подстановке данных для достижения', error)
+    }
+  }
+}
+
+// Слежение за изменениями в selectedAchievement
+watch(selectedAchievement, onAchievementChange)
+
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    inputed_doc_ver_link.value = file;
+  }
+}
 </script>
 
 <template>
@@ -254,17 +282,19 @@ const totalScore = computed(() => {
     <div class="grid grid-cols-3 mt-4 mx-4">
       <div
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
-        @click="() => $router.push('/')"
+        @click="() => $router.go(-1)"
       >
         Назад
       </div>
       <div
+        v-if="['ADMIN', 'ZAV', 'OTV'].includes(role)"
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="downloadReport"
       >
         Вывести данные в отчет
       </div>
       <div
+        v-if="['ADMIN', 'ZAV', 'OTV'].includes(role)"
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="openModal"
       >
@@ -322,13 +352,51 @@ const totalScore = computed(() => {
             <button @click="closeModal" class="text-4xl text-red-500">×</button>
           </div>
 
+          <!-- Выбор достижения -->
           <select v-model="selectedAchievement" class="text-2xl mt-3 p-2 rounded-xl w-full">
             <option v-for="achievement in allAchData" :key="achievement.id" :value="achievement.id">
               {{ achievement.name }}
             </option>
           </select>
 
-          <input v-model="inputed_meas_unit_val" placeholder="Единица измерения..." />
+          <input
+            class="text-2xl mt-3 p-2 rounded-xl w-full"
+            v-model="inputed_name"
+            placeholder="Полное наименование..."
+          />
+
+          <div class="grid grid-cols-2">
+            <div>
+              <!-- Подставленный mes_unit -->
+              <input
+                class="text-2xl text-right mt-3 p-2 rounded-xl w-full"
+                v-model="meas_unit"
+                placeholder="Единица измерения..."
+                readonly
+              />
+            </div>
+            <div>
+              <!-- mes_unit_val -->
+              <input
+                class="text-2xl mt-3 p-2 rounded-xl w-full"
+                v-model="inputed_meas_unit_val"
+                placeholder="Значение единицы измерения..."
+              />
+            </div>
+          </div>
+          <input
+            class="text-2xl mt-3 p-2 rounded-xl w-full"
+            v-model="inputed_ver_link"
+            placeholder="Ссылка для подтверждения..."
+          />
+
+          <input
+            type="file"
+            class="text-2xl mt-3 p-2 rounded-xl w-full"
+            @change="handleFileUpload"
+            accept=".pdf,.docx,.jpg,.png"
+            ref="fileInput"
+          />
 
           <div
             class="w-full mt-2 shadow-2xl text-center text-2xl font-bold transition hover:scale-105 cursor-pointer p-2 rounded-2xl border-2 border-black"

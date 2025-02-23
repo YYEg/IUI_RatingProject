@@ -1,5 +1,5 @@
 from django.forms import model_to_dict
-from rest_framework import generics
+from rest_framework import generics, parsers
 from .models import Employee, Department, Employee_Achievment, Achievment
 from .serializers import EmployeeSerializer, DepartmentSerializer, Employee_AchievmentSerializer, AchievmentSerializer
 from rest_framework.response import Response
@@ -93,21 +93,39 @@ class DepartmentTeachersApiView(APIView):
 
         return Response(teacher_data)
 
-class EmployeeApiViewDetail(generics.RetrieveAPIView):
-    queryset = Employee.objects.all()
-    serializer_class = EmployeeSerializer
-    lookup_field = 'id'
+class EmployeeApiViewDetail(APIView):
+    def get(self, request, id):
+        # Получаем сотрудника или возвращаем 404
+        employee = get_object_or_404(Employee, id=id)
+        
+        # Формируем ответ с данными о сотруднике и его кафедре
+        data = {
+            "id": employee.id,
+            "name": employee.name,
+            "surname": employee.surname,
+            "parentName": employee.parentName,
+            "department": {
+                "id": employee.department.id,
+                "name": employee.department.name
+            }
+        }
+        
+        return Response(data)
 
 class Employee_AchievmentApiView(generics.ListCreateAPIView):
     queryset = Employee_Achievment.objects.all()
     serializer_class = Employee_AchievmentSerializer
-    
+    parser_classes = [parsers.MultiPartParser]  # Указываем парсер для обработки загрузки файлов
+
     def post(self, request):
         # Получаем экземпляр Employee по ID
         employee = get_object_or_404(Employee, id=request.data['employee'])
-        
+
         # Получаем экземпляр Achievment по ID
         achievment = get_object_or_404(Achievment, id=request.data['achievment'])
+
+        # Если файл загружается, он будет доступен через request.FILES['verif_doc']
+        verif_doc = request.FILES.get('verif_doc')
 
         # Создаем новый объект Employee_Achievment
         ach_new = Employee_Achievment.objects.create(
@@ -115,11 +133,13 @@ class Employee_AchievmentApiView(generics.ListCreateAPIView):
             achievment=achievment,
             meas_unit_val=request.data['meas_unit_val'],
             score=request.data['score'],
-            verif_doc=request.data['verif_doc'],
-            #number=request.data['number']
+            verif_doc=verif_doc,  # Загрузка файла
+            verif_link=request.data['verif_link'],
+            full_achivment_name=request.data['full_achivment_name'],
+            reciving_date=request.data['reciving_date']
         )
-        
-        return Response({'Новое достижение': model_to_dict(ach_new)})
+
+        return Response({'Новое достижение': Employee_AchievmentSerializer(ach_new).data})
     
 class EmployeeAchievementsApiView(APIView):
     def get(self, request, employee_id):
@@ -206,7 +226,8 @@ class UserProfileView(APIView):
             'department': user.department_id,
             'last_name': user.last_name,
             'first_name': user.first_name,
-            'employee': user.employee_id
+            'employee': user.employee_id,
+            'role': user.role
         }
         return Response(user_data)
     
@@ -269,7 +290,8 @@ class EmployeeAchievementByAchievmentApiView(APIView):
                 'full_name': ach.full_achivment_name,
                 'score': ach.score,
                 'meas_unit_val': ach.meas_unit_val,
-                'verif_doc': ach.verif_doc,
+                'verif_doc': ach.verif_doc.url if ach.verif_doc else None,  # Передаем URL файла или None
+                'verif_link': ach.verif_link
                 # Добавьте остальные поля по необходимости
             }
             for ach in achievements
@@ -277,4 +299,21 @@ class EmployeeAchievementByAchievmentApiView(APIView):
 
         return Response({'employee': employee.surname, 'achievment': achievment.name, 'achievements': achievements_data})
 
+from django.http import FileResponse
+   
+class DownloadAchievementDocumentApiView(APIView):
+    def get(self, request, achievement_record_id):
+        # Получаем запись достижения по ID
+        achievement_record = get_object_or_404(Employee_Achievment, id=achievement_record_id)
+
+        # Проверяем, есть ли файл
+        if not achievement_record.verif_doc:
+            return Response({'error': 'Документ не найден'}, status=404)
+
+        # Открываем файл и создаем ответ с файлом
+        document_path = achievement_record.verif_doc.path  # Получаем путь к файлу
+        document_name = achievement_record.verif_doc.name.split('/')[-1]  # Получаем имя файла
+
+        # Отправляем файл пользователю
+        return FileResponse(open(document_path, 'rb'), as_attachment=True, filename=document_name)
 

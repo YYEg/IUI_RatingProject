@@ -24,6 +24,7 @@ class User(AbstractUser):
 
     employee = models.ForeignKey('Employee', on_delete=models.PROTECT, null=True, blank=True)
     department = models.ForeignKey('Department', on_delete=models.PROTECT, null=True, blank=True)
+    role = models.CharField('role', max_length=50)
     
 class Achievment(models.Model):
     
@@ -42,6 +43,8 @@ class Employee_Achievment(models.Model):
     score = models.FloatField(default=0.0)
     # Подтверждающий документ
 
-    verif_doc = models.CharField(max_length=1000)
+    verif_doc = models.FileField(upload_to='verification_documents/', blank=True, null=True)  # Добавлено поле для файла
+    verif_link = models.CharField(max_length=2000)
     reciving_date = models.DateField()
+    active = models.BooleanField(default=True)
    

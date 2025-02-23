@@ -26,11 +26,11 @@ const sortBy = reactive({
 
 // Фильтрация данных
 const filteredEmployees = computed(() => {
-  return employeesData.value.filter(employee => {
-    const fullName = `${employee.surname} ${employee.name} ${employee.parentName}`.toLowerCase();
-    return fullName.includes(searchQuery.value.toLowerCase());
-  });
-});
+  return employeesData.value.filter((employee) => {
+    const fullName = `${employee.surname} ${employee.name} ${employee.parentName}`.toLowerCase()
+    return fullName.includes(searchQuery.value.toLowerCase())
+  })
+})
 
 // Функция сортировки
 const sortTable = (column) => {
@@ -46,7 +46,7 @@ const sortTable = (column) => {
 const sortedEmployees = computed(() => {
   return [...filteredEmployees.value].sort((a, b) => {
     let aValue, bValue
-    
+
     if (sortBy.column === 'fullName') {
       aValue = `${a.surname} ${a.name} ${a.parentName}`.toLowerCase()
       bValue = `${b.surname} ${b.name} ${b.parentName}`.toLowerCase()
@@ -65,6 +65,12 @@ const sortedEmployees = computed(() => {
 
 // Вытягиваю данные с бека для всех сотрудников
 onMounted(async () => {
+  // Проверяем, есть ли токен
+  if (!token.value) {
+    // Если токена нет, перенаправляем на страницу авторизации
+    window.location.href = '/login'
+    return
+  }
   try {
     const employeeResponse = await axios.get('http://127.0.0.1:8000/api/v1/employees/')
     employeesData.value = employeeResponse.data
@@ -78,20 +84,17 @@ onMounted(async () => {
 <template>
   <div class="m-auto mt-10">
     <headerBlock>
-      <div class="flex justify-center">
+      <div class="flex justify-end">
         <div
-          v-if="isLoggedIn"
-          class="w-full flex justify-center items-center text-black text-2xl p-4 text-center font-sm transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
+          class="flex justify-end w-80 p-4 transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
           @click="() => $router.push('/profile')"
         >
-          Личный кабинет
-        </div>
-        <div
-          v-else
-          class="w-full flex justify-center items-center text-black text-2xl p-4 text-center font-sm transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
-          @click="() => $router.push('/login')"
-        >
-          Войти
+          <div
+            class="w-full flex justify-center items-center text-black text-3xl text-center font-sm"
+          >
+            Личный кабинет
+          </div>
+          <img src="../assets/profile.png" alt="Логотип" class="mr-4 h-20 w-auto" />
         </div>
       </div>
     </headerBlock>
@@ -135,10 +138,14 @@ onMounted(async () => {
 
     <div class="grid grid-cols-2 items-center justify-items-center mt-4">
       <div class="grid grid-cols-2 items-center justify-items-center mt-4">
-        <div class="text-2xl p-4 h-16 border-slate-300 border-x-2 border-t-2 text-center text-slate-400 font-sm transition cursor-pointer rounded-t-md shadow-2xl">
+        <div
+          class="text-2xl p-4 h-16 border-slate-300 border-x-2 border-t-2 text-center text-slate-400 font-sm transition cursor-pointer rounded-t-md shadow-2xl"
+        >
           <a href="/departamentRatingPage">Подразделения</a>
         </div>
-        <div class="text-2xl p-4 h-16 border-slate-400 text-center text-white font-sm transition cursor-pointer bg-blue-900 rounded-t-md shadow-2xl">
+        <div
+          class="text-2xl p-4 h-16 border-slate-400 text-center text-white font-sm transition cursor-pointer bg-blue-900 rounded-t-md shadow-2xl"
+        >
           Сотрудники
         </div>
       </div>

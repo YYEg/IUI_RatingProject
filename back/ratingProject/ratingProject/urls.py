@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework.authtoken.views import obtain_auth_token
 
-from teachersRating.views import Logout, ProfileEmployeeAchievementsApiView, EmployeeAchievementByAchievmentApiView, EmployeeAchievementsApiView, EmployeeAchievementsDeleteApiView, DeleteEmployeeAchievementApiView, DepartmentRatingApiView, DepartmentTeachersApiView, UserProfileView, AchievmentApiView, Employee_AchievmentApiView, EmployeeApiViewDetail, DepartmentApiViewDetail, DepartmentApiView, EmployeeApiView
+from teachersRating.views import Logout, ProfileEmployeeAchievementsApiView, DownloadAchievementDocumentApiView, EmployeeAchievementByAchievmentApiView, EmployeeAchievementsApiView, EmployeeAchievementsDeleteApiView, DeleteEmployeeAchievementApiView, DepartmentRatingApiView, DepartmentTeachersApiView, UserProfileView, AchievmentApiView, Employee_AchievmentApiView, EmployeeApiViewDetail, DepartmentApiViewDetail, DepartmentApiView, EmployeeApiView
 from teachersRating.generate_report import generate_report
 
 urlpatterns = [
@@ -27,5 +27,6 @@ urlpatterns = [
      path('api/v1/employee_achievements/teachers/<int:employee_id>/delete', EmployeeAchievementsApiView.as_view(), name='achivments_of_employee'),
      path('api/v1/generate_report/', generate_report, name='generate_report'),
      path('api/v1/employe_achievments/employee/<int:employee_id>', ProfileEmployeeAchievementsApiView.as_view(), name='profile_employee_achievments'),
-     path('api/employee/<employee_id>/achievement/<achievment_id>/achievements/', EmployeeAchievementByAchievmentApiView.as_view(), name='employee_achievment_achievment')
+     path('api/employee/<employee_id>/achievement/<achievment_id>/achievements/', EmployeeAchievementByAchievmentApiView.as_view(), name='employee_achievment_achievment'),
+      path('download/<int:achievement_record_id>/', DownloadAchievementDocumentApiView.as_view(), name='download_achievement_document'),
 ]

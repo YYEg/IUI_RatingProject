@@ -3,10 +3,21 @@ import axios from 'axios'
 import headerBlock from '../components/headerBlock.vue'
 import { ref } from 'vue'
 import router from '@/router'
+import { onMounted  } from 'vue'
 
 const username = ref('')
 const password = ref('')
 const token = ref(localStorage.getItem('token') || '')
+
+onMounted(async () => {
+  // Проверяем, есть ли токен
+  if (token.value) {
+    // Если токена нет, перенаправляем на страницу авторизации
+    window.location.href = '/'
+    return
+  }
+  getUserData()
+})
 
 const login = (event) => {
   event.preventDefault()
@@ -17,6 +28,7 @@ const login = (event) => {
       password: password.value
     })
     .then((response) => {
+      console.log(response.data)
       setLogin(response.data.token)
     })
     .catch((error) => {
@@ -34,7 +46,6 @@ const setLogin = (token) => {
 }
 </script>
 <template>
-  <!-- <headerBlock  /> -->
   <div class="h-screen">
     <div class="h-full w-full flex justify-center items-center">
       <div
