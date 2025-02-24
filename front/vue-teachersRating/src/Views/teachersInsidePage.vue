@@ -154,13 +154,7 @@ const totalScore = computed(() => {
       >
         Назад
       </div>
-      <div
-        v-if="canDisplayBlock"
-        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
-        @click="downloadReport"
-      >
-        Вывести данные в отчет
-      </div>
+      <div></div>
       <div
         v-if="canDisplayBlock"
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"

@@ -67,6 +67,9 @@ const getUserData = async () => {
 
 const addAchievement = async () => {
   try {
+    const oneAch = await axios.get(
+      `http://127.0.0.1:8000/api/v1/achievments/${selectedAchievement.value}`
+    )
     const data = new FormData();
     data.append('employee', userData.value.employee);
     data.append('achievment', selectedAchievement.value);
@@ -74,7 +77,7 @@ const addAchievement = async () => {
     data.append('verif_doc', inputed_doc_ver_link.value);  // Добавляем файл
     data.append('verif_link', inputed_ver_link.value);
     data.append('full_achivment_name', inputed_name.value);
-    data.append('score', inputed_meas_unit_val.value * 2);
+    data.append('score', inputed_meas_unit_val.value * oneAch.data.meas_unit_score);
     data.append('reciving_date', new Date().toISOString().split('T')[0]);
 
     const response = await axios.post('http://127.0.0.1:8000/api/v1/employee_achievment/', data, {

@@ -112,6 +112,20 @@ class EmployeeApiViewDetail(APIView):
         
         return Response(data)
 
+class OneAchievmentApiView(APIView):
+    def get(self, request, achievment_id):
+        # Получаем сотрудника или возвращаем 404
+        achievment = get_object_or_404(Achievment, id=achievment_id)
+        
+        # Формируем ответ с данными о сотруднике и его кафедре
+        data = {
+            "id": achievment.id,
+            "name": achievment.name,
+            "meas_unit_score": achievment.meas_unit_score,
+        }
+        
+        return Response(data)
+
 class Employee_AchievmentApiView(generics.ListCreateAPIView):
     queryset = Employee_Achievment.objects.all()
     serializer_class = Employee_AchievmentSerializer
