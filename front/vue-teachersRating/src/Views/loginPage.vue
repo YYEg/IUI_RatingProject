@@ -16,7 +16,6 @@ onMounted(async () => {
     window.location.href = '/'
     return
   }
-  getUserData()
 })
 
 const login = (event) => {

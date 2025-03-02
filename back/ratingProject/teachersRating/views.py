@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Sum
 from django.db.models import F, Window
 from django.db.models.functions import Rank
+import yagmail
 
 class EmployeeApiView(APIView):
     def get(self, request):
@@ -28,6 +29,7 @@ class EmployeeApiView(APIView):
                 'surname': employee.surname,
                 'name': employee.name,
                 'parentName': employee.parentName,
+                'email': employee.email,
                 'total_score': employee.total_score or 0,
                 'rating': employee.rating
             }
@@ -86,6 +88,7 @@ class DepartmentTeachersApiView(APIView):
                 'surname': teacher.surname,
                 'name': teacher.name,
                 'parentName': teacher.parentName,
+                'email': teacher.email,
                 'total_score': teacher.total_score or 0  # Если сумма None, подставляем 0
             }
             for teacher in teachers
@@ -104,6 +107,7 @@ class EmployeeApiViewDetail(APIView):
             "name": employee.name,
             "surname": employee.surname,
             "parentName": employee.parentName,
+            'email': employee.email,
             "department": {
                 "id": employee.department.id,
                 "name": employee.department.name
@@ -210,13 +214,33 @@ class EmployeeAchievementsDeleteApiView(APIView):
         achievement.delete()
         return Response({'message': 'Достижение удалено!'}, status=204)
     
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+import yagmail
+
 class DeleteEmployeeAchievementApiView(APIView):
     """Удаляет конкретное достижение сотрудника по его ID"""
 
     def delete(self, request, achievement_id):
         achievement = get_object_or_404(Employee_Achievment, id=achievement_id)
+        
+        # Получаем email из тела запроса
+        email = request.data.get('email')
+        
+        if email:
+            # Отправка сообщения об удалении
+            yag = yagmail.SMTP('rezervdesu15@gmail.com', 'ddvd jduu prdi ktih')  
+            yag.send(
+                email,  # Используем email из запроса
+                f"Удаление достижения", 
+                f"Достижение {achievement.full_achivment_name} было удалено ввиду его некорректности, исправьте ошибки и внесите корректное достижение"
+            )
+        
         achievement.delete()
-        return Response({'message': 'Достижение удалено!'}, status=204)
+
+        return Response({'message': 'Достижение удалено!'}, status=status.HTTP_204_NO_CONTENT)
 
 class AchievmentApiView(generics.ListAPIView):
     queryset = Achievment.objects.all()

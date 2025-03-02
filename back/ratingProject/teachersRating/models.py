@@ -8,6 +8,7 @@ class Employee(models.Model):
     name = models.CharField(max_length=50)
     surname = models.CharField(max_length=50)
     parentName = models.CharField(max_length=50)
+    email = models.CharField(max_length=500, null=True)
     department = models.ForeignKey('Department', on_delete=models.PROTECT, null=False)
 
     def __str__(self):
@@ -47,4 +48,4 @@ class Employee_Achievment(models.Model):
     verif_link = models.CharField(max_length=2000)
     reciving_date = models.DateField()
     active = models.BooleanField(default=True)
-   
+    

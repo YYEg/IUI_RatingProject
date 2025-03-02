@@ -8,12 +8,16 @@ import axios from 'axios'
 import { useRoute } from 'vue-router'
 
 const achivmentsData = ref([])
-const teacherId = ref(null) // ID преподавателя из данных пользователя
-const successMessage = ref('')
-const errorMessage = ref('')
+const isDeleting = ref(false)
+const deletedAchForMail = ref([])
+const employeeData = ref([])
 const token = ref(localStorage.getItem('token') || '')
 const route = useRoute()
-const isLoggedIn = computed(() => !!token.value)
+const searchQuery = ref('')
+const sortBy = reactive({
+  column: 'score',
+  order: 'desc'
+})
 
 // Шапка и размеры таблицы
 const tableHeads = [
@@ -22,11 +26,6 @@ const tableHeads = [
   { key: 'score', label: 'Балл' }
 ]
 const tableSizeColumns = '1fr 5fr 2fr 2fr 2fr 2fr'
-const searchQuery = ref('')
-const sortBy = reactive({
-  column: 'score',
-  order: 'desc'
-})
 
 // Получение данных пользователя
 const getUserData = async () => {
@@ -37,65 +36,57 @@ const getUserData = async () => {
     achivmentsData.value = achievementsResponse.data.achievements
     console.log(achivmentsData.value)
   } catch (error) {
-    console.error('Error fetching user data:', error)
+    console.error('Проблема с получением данных пользователя:', error)
   }
 }
 
 const deleteAchievement = async (achievementId) => {
+  isDeleting.value = true
   try {
     console.log(achievementId)
     const response = await axios.delete(
-      `http://127.0.0.1:8000/api/v1/delete_employee_achievement/${achievementId}/`, // Обновленный URL
+      `http://127.0.0.1:8000/api/v1/delete_employee_achievement/${achievementId}/`,
       {
-        headers: { Authorization: `Token ${token.value}` }
+        headers: { Authorization: `Token ${token.value}` },
+        data: { email: employeeData.value.email } // Добавляем email в тело запроса
       }
     )
 
-    console.log('Achievement deleted successfully:', response.data)
+    console.log('Достижение успешно удалено:', response.data)
+    deletedAchForMail.value = response.data
 
-    // Обновляем список достижений после удаления
-    const achievementsResponse = await axios.get(
-      `http://127.0.0.1:8000/api/employee/${route.params.empl_id}/achievement/${route.params.ach_id}/achievements/`
-    )
-    achivmentsData.value = achievementsResponse.data.achievements
-
-    // Показываем сообщение об успешном удалении
-    successMessage.value = 'Успешно удалено достижение!'
-    errorMessage.value = ''
-
-    // Скрываем сообщение об успешном удалении после некоторого времени
-    setTimeout(() => {
-      successMessage.value = ''
-    }, 3000)
+    try {
+      // Обновляем список достижений после удаления
+      const achievementsResponse = await axios.get(
+        `http://127.0.0.1:8000/api/employee/${route.params.empl_id}/achievement/${route.params.ach_id}/achievements/`
+      )
+      achivmentsData.value = achievementsResponse.data.achievements
+    } catch (error) {
+      achivmentsData.value = []
+    }
   } catch (error) {
-    console.error('Error deleting achievement:', error)
-
-    // Показываем сообщение об ошибке при удалении
-    errorMessage.value = 'Ошибка при удалении достижения. Попробуйте позже.'
-    successMessage.value = ''
-
-    // Скрываем сообщение об ошибке после некоторого времени
-    setTimeout(() => {
-      errorMessage.value = ''
-    }, 3000)
+    console.error('Ошибка удаления достижения:', error)
+  } finally {
+    isDeleting.value = false
   }
 }
 
 onMounted(async () => {
-  // Проверяем, есть ли токен
   if (!token.value) {
-    // Если токена нет, перенаправляем на страницу авторизации
     window.location.href = '/login'
     return
   }
   getUserData()
-  console.log(teacherId.value)
-})
-
-const setLogout = () => {
-  localStorage.removeItem('token')
-  window.location.href = '/login'
+  try{
+    const employeeResponse = await axios.get(
+          `http://127.0.0.1:8000/api/v1/employees/${route.params.empl_id}/`
+        )
+        employeeData.value = employeeResponse.data
+  } catch {
+    console.error('Данные сотрудника получить не удалось:', error)
 }
+
+})
 
 const filteredAchievements = computed(() => {
   return achivmentsData.value.filter((achievement) =>
@@ -138,20 +129,17 @@ const totalScore = computed(() => {
 
 const downloadDocument = async (achievementRecordId) => {
   try {
-    const response = await axios.get(
-      `http://127.0.0.1:8000/download/${achievementRecordId}/`,
-      {
-        headers: {
-          Authorization: `Token ${token.value}`
-        },
-        responseType: 'blob' // Важно для загрузки файлов
-      }
-    )
+    const response = await axios.get(`http://127.0.0.1:8000/download/${achievementRecordId}/`, {
+      headers: {
+        Authorization: `Token ${token.value}`
+      },
+      responseType: 'blob'
+    })
 
     // Проверка на успешный ответ (200 OK)
     if (response.status === 200) {
       const contentDisposition = response.headers['content-disposition']
-      const contentType = response.headers['content-type'] // Получаем тип контента из заголовков
+      const contentType = response.headers['content-type']
       const fileName = contentDisposition
         ? contentDisposition.split('filename=')[1].replace(/"/g, '')
         : `document_${achievementRecordId}`
@@ -171,7 +159,7 @@ const downloadDocument = async (achievementRecordId) => {
 
       // Очищаем память от созданного объекта URL
       URL.revokeObjectURL(url)
-      document.body.removeChild(link) // Убираем элемент ссылки из DOM
+      document.body.removeChild(link)
     } else {
       throw new Error('Ошибка при получении документа')
     }
@@ -179,8 +167,6 @@ const downloadDocument = async (achievementRecordId) => {
     console.error('Ошибка при скачивании документа:', error)
   }
 }
-
-
 </script>
 
 <template>
@@ -200,6 +186,7 @@ const downloadDocument = async (achievementRecordId) => {
         </div>
       </div>
     </headerBlock>
+
     <div class="flex grid grid-cols-2 items-center mt-4 mx-4">
       <div class="relative">
         <input
@@ -245,6 +232,7 @@ const downloadDocument = async (achievementRecordId) => {
         Назад
       </div>
     </div>
+
     <div class="p-2">
       <BaseTable :columnTemplates="tableSizeColumns">
         <TableRow :columnTemplates="tableSizeColumns">
@@ -272,17 +260,40 @@ const downloadDocument = async (achievementRecordId) => {
               {{ achievement.full_name }}
             </TableColumn>
             <TableColumn>{{ achievement.score }}</TableColumn>
-            <TableColumn
-              ><button
-                @click="deleteAchievement(achievement.id)"
-                class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
-              >
-                Удалить
-              </button></TableColumn
-            >
             <TableColumn>
               <button
-              v-if="achievement.verif_doc != null"
+                @click="deleteAchievement(achievement.id)"
+                class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+                :disabled="isDeleting"
+              >
+                <span v-if="isDeleting">
+                  <svg
+                    class="animate-spin h-4 w-4 inline-block"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                </span>
+                <span v-else>Удалить</span>
+              </button>
+            </TableColumn>
+            <TableColumn>
+              <button
+                v-if="achievement.verif_doc != null"
                 @click="downloadDocument(achievement.id)"
                 class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
               >

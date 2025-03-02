@@ -45,10 +45,13 @@ const getUserData = async () => {
         Authorization: `Token ${token.value}` // Убедитесь, что токен определён
       }
     })
+    
     userData.value = response.data
+    console.log(userData.value)
     teacherId.value = userData.value.employee // Установите teacherId из userData
     localStorage.setItem('role', userData.value.role)
     localStorage.setItem('department', userData.value.department)
+    localStorage.setItem('email', userData.value.email)
     role.value = localStorage.role
     userName.value = userData.value.last_name
     userDepatment.value = userData.value.department
@@ -133,6 +136,7 @@ const setLogout = () => {
   localStorage.removeItem('token')
   localStorage.removeItem('role')
   localStorage.removeItem('department')
+  localStorage.removeItem('logout')
   window.location.href = '/login'
 }
 
