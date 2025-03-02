@@ -3,16 +3,13 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 
-
-
-from .models import Employee, Department, Employee_Achievment, Achievment
-from .models import User
-
+from .models import Employee, Department, Employee_Achievment, Achievment, User, Achievment_groups
 
 admin.site.register(Employee)
 admin.site.register(Department)
 admin.site.register(Employee_Achievment)
 admin.site.register(Achievment)
+admin.site.register(Achievment_groups)
 
 User = get_user_model()
 class CustomUserAdmin(UserAdmin):

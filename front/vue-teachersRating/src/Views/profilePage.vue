@@ -27,7 +27,7 @@ const isModalOpen = ref(false)
 // Шапка и размеры таблицы
 const tableHeads = [
   { key: 'id', label: '№' },
-  { key: 'name', label: 'Достижение' },
+  { key: 'name', label: 'Наименование показателя' },
   { key: 'score', label: 'Балл' }
 ]
 const tableSizeColumns = '1fr 8fr 2fr'
@@ -45,7 +45,7 @@ const getUserData = async () => {
         Authorization: `Token ${token.value}` // Убедитесь, что токен определён
       }
     })
-    
+
     userData.value = response.data
     console.log(userData.value)
     teacherId.value = userData.value.employee // Установите teacherId из userData
@@ -59,10 +59,13 @@ const getUserData = async () => {
     const achievementsResponse = await axios.get(
       `http://127.0.0.1:8000/api/v1/employe_achievments/employee/${teacherId.value}`
     )
-    achivmentsData.value = achievementsResponse.data.achievements
+    // Сортируем данные по полю number по возрастанию
+    achivmentsData.value = achievementsResponse.data.achievements.sort(
+      (a, b) => a.number - b.number
+    )
 
     const AllAchResp = await axios.get('http://127.0.0.1:8000/api/v1/achievments/')
-    allAchData.value = AllAchResp.data
+    allAchData.value = AllAchResp.data.filter((item) => item.meas_unit_score !== 0)
   } catch (error) {
     console.error('Error fetching user data:', error)
   }
@@ -73,42 +76,42 @@ const addAchievement = async () => {
     const oneAch = await axios.get(
       `http://127.0.0.1:8000/api/v1/achievments/${selectedAchievement.value}`
     )
-    const data = new FormData();
-    data.append('employee', userData.value.employee);
-    data.append('achievment', selectedAchievement.value);
-    data.append('meas_unit_val', inputed_meas_unit_val.value);
-    data.append('verif_doc', inputed_doc_ver_link.value);  // Добавляем файл
-    data.append('verif_link', inputed_ver_link.value);
-    data.append('full_achivment_name', inputed_name.value);
-    data.append('score', inputed_meas_unit_val.value * oneAch.data.meas_unit_score);
-    data.append('reciving_date', new Date().toISOString().split('T')[0]);
+    const data = new FormData()
+    data.append('employee', userData.value.employee)
+    data.append('achievment', selectedAchievement.value)
+    data.append('meas_unit_val', inputed_meas_unit_val.value)
+    data.append('verif_doc', inputed_doc_ver_link.value) // Добавляем файл
+    data.append('verif_link', inputed_ver_link.value)
+    data.append('full_achivment_name', inputed_name.value)
+    data.append('score', inputed_meas_unit_val.value * oneAch.data.meas_unit_score)
+    data.append('reciving_date', new Date().toISOString().split('T')[0])
 
     const response = await axios.post('http://127.0.0.1:8000/api/v1/employee_achievment/', data, {
       headers: {
         Authorization: `Token ${token.value}`,
-        'Content-Type': 'multipart/form-data'  // Указываем, что отправляем FormData
+        'Content-Type': 'multipart/form-data' // Указываем, что отправляем FormData
       }
-    });
+    })
 
-    getUserData();
-    console.log('Achievement added successfully:', response.data);
+    getUserData()
+    console.log('Achievement added successfully:', response.data)
 
-    selectedAchievement.value = null;
+    selectedAchievement.value = null
 
-    successMessage.value = 'Успешно добавлено достижение!';
-    errorMessage.value = '';
+    successMessage.value = 'Успешно добавлено достижение!'
+    errorMessage.value = ''
 
     setTimeout(() => {
-      successMessage.value = '';
-    }, 3000);
+      successMessage.value = ''
+    }, 3000)
   } catch (error) {
-    console.error('Ошибка при добавлении достижения:', error);
-    errorMessage.value = 'Ошибка при добавлении достижения!';
-    successMessage.value = '';
+    console.error('Ошибка при добавлении достижения:', error)
+    errorMessage.value = 'Ошибка при добавлении достижения!'
+    successMessage.value = ''
 
     setTimeout(() => {
-      errorMessage.value = '';
-    }, 3000);
+      errorMessage.value = ''
+    }, 3000)
   }
 }
 
@@ -140,9 +143,12 @@ const setLogout = () => {
 
 const downloadReport = async () => {
   try {
-    const response = await axios.get('http://127.0.0.1:8000/api/v1/generate_report/', {
-      responseType: 'blob' // Указываем, что ожидаем бинарный файл
-    })
+    const response = await axios.get(
+      `http://127.0.0.1:8000/api/v1/generate_personal_report/?teacher_id=${teacherId.value}`, // Передаем teacherId в запросе
+      {
+        responseType: 'blob' // Указываем, что ожидаем бинарный файл
+      }
+    )
 
     // Создание объекта URL для скачивания
     const blob = new Blob([response.data], {
@@ -154,7 +160,7 @@ const downloadReport = async () => {
     // Устанавливаем имя файла
     const filename =
       response.headers['content-disposition']?.split('filename=')[1]?.replace(/"/g, '') ||
-      'ОТЧЕТ_ПО_КАФЕДРЕ.xlsx'
+      'Приложение№4_Сотрудник.xlsx'
     link.download = filename
 
     // Инициируем скачивание
@@ -170,15 +176,6 @@ const filteredAchievements = computed(() => {
     achievement.achievment_name.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
-
-const sortTable = (column) => {
-  if (sortBy.column === column) {
-    sortBy.order = sortBy.order === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortBy.column = column
-    sortBy.order = 'desc'
-  }
-}
 
 // Вычисляемый список с фильтрацией и сортировкой
 const filteredDepartmentData = computed(() => {
@@ -222,9 +219,9 @@ const onAchievementChange = async () => {
 watch(selectedAchievement, onAchievementChange)
 
 const handleFileUpload = (event) => {
-  const file = event.target.files[0];
+  const file = event.target.files[0]
   if (file) {
-    inputed_doc_ver_link.value = file;
+    inputed_doc_ver_link.value = file
   }
 }
 </script>
@@ -312,13 +309,9 @@ const handleFileUpload = (event) => {
           <TableColumn
             v-for="head in tableHeads"
             :key="head.key"
-            @click="sortTable(head.key)"
             class="cursor-pointer font-sm text-white"
           >
             {{ head.label }}
-            <span v-if="sortBy.column === head.key">
-              {{ sortBy.order === 'asc' ? '▲' : '▼' }}
-            </span>
           </TableColumn>
         </TableRow>
 
@@ -329,7 +322,7 @@ const handleFileUpload = (event) => {
             :columnTemplates="tableSizeColumns"
           >
             <TableColumn>{{ achievement.number }}</TableColumn>
-            <TableColumn class="cursor-pointer">
+            <TableColumn v-if="achievement.meas_unit_score !== 0" class="cursor-pointer">
               <router-link
                 :to="{
                   name: 'achievmentDetailed',
@@ -339,7 +332,16 @@ const handleFileUpload = (event) => {
                 {{ achievement.achievment_name }}
               </router-link>
             </TableColumn>
-            <TableColumn>{{ achievement.score }}</TableColumn>
+            <TableColumn v-else>
+              {{ achievement.achievment_name }}
+            </TableColumn>
+            <!-- <TableColumn v-if="achievement.meas_unit_score !== 0">{{
+              achievement.score
+            }}</TableColumn>
+            <TableColumn v-else></TableColumn> -->
+            <TableColumn>{{
+              achievement.score
+            }}</TableColumn>
           </TableRow>
         </template>
       </BaseTable>
@@ -360,7 +362,7 @@ const handleFileUpload = (event) => {
           <!-- Выбор достижения -->
           <select v-model="selectedAchievement" class="text-2xl mt-3 p-2 rounded-xl w-full">
             <option v-for="achievement in allAchData" :key="achievement.id" :value="achievement.id">
-              {{ achievement.name }}
+              {{ achievement.number }} {{ achievement.name }}
             </option>
           </select>
 

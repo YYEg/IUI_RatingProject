@@ -15,7 +15,7 @@ class DepartmentSerializer(serializers.ModelSerializer):
 class AchievmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Achievment
-        fields = ('id', 'name', 'meas_unit', 'meas_unit_score', 'verif_doc_info')
+        fields = ('id', 'name', 'meas_unit', 'meas_unit_score', 'verif_doc_info', 'number')
 
 class Employee_AchievmentSerializer(serializers.ModelSerializer):
     class Meta:

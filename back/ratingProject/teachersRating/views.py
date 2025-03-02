@@ -1,4 +1,4 @@
-from django.forms import model_to_dict
+from .generate_personal_report import generate_personal_report
 from rest_framework import generics, parsers
 from .models import Employee, Department, Employee_Achievment, Achievment
 from .serializers import DepartmentSerializer, Employee_AchievmentSerializer, AchievmentSerializer
@@ -262,6 +262,12 @@ class UserProfileView(APIView):
         }
         return Response(user_data)
     
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from .models import Employee, Employee_Achievment, Achievment
+from django.db.models import Sum
+
 class ProfileEmployeeAchievementsApiView(APIView):
     def get(self, request, employee_id):
         """Возвращает список всех достижений сотрудника, суммируя баллы, если они есть у сотрудника."""
@@ -280,6 +286,24 @@ class ProfileEmployeeAchievementsApiView(APIView):
                 achievements_score[emp_ach.achievment.id] = 0
             achievements_score[emp_ach.achievment.id] += emp_ach.score  # Суммируем баллы для достижения
 
+        # Создаем словарь для хранения баллов родительских достижений
+        parent_achievements_score = {}
+
+        # Проходим по всем достижениям и суммируем баллы для родительских достижений
+        for achievement in all_achievements:
+            if achievement.parent_id:  # Если у достижения есть родитель
+                if achievement.parent_id not in parent_achievements_score:
+                    parent_achievements_score[achievement.parent_id] = 0
+                # Добавляем баллы дочернего достижения к родительскому
+                parent_achievements_score[achievement.parent_id] += achievements_score.get(achievement.id, 0)
+
+        # Обновляем баллы для родительских достижений
+        for parent_id, score in parent_achievements_score.items():
+            if parent_id in achievements_score:
+                achievements_score[parent_id] += score
+            else:
+                achievements_score[parent_id] = score
+
         achievements_data = []
 
         for achievement in all_achievements:
@@ -294,6 +318,7 @@ class ProfileEmployeeAchievementsApiView(APIView):
                 'score': total_score,  # Сумма баллов для достижения
                 'meas_unit_val': None,  # Пример, если вам нужно оставить данные
                 'verif_doc': None,  # Пример
+                'meas_unit_score': achievement.meas_unit_score
             })
 
         return Response({'employee': employee.surname, 'achievements': achievements_data})
@@ -345,3 +370,7 @@ class DownloadAchievementDocumentApiView(APIView):
         # Отправляем файл пользователю
         return FileResponse(open(document_path, 'rb'), as_attachment=True, filename=document_name)
 
+class GenearatePersonalReportApiView(APIView):
+    def get(self, request, *args, **kwargs):
+        response = generate_personal_report(request)
+        return response
