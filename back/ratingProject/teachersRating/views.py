@@ -12,6 +12,7 @@ from django.db.models import Sum
 from django.db.models import F, Window
 from django.db.models.functions import Rank
 import yagmail
+from django.http import FileResponse
 
 class EmployeeApiView(APIView):
     def get(self, request):
@@ -214,12 +215,6 @@ class EmployeeAchievementsDeleteApiView(APIView):
         achievement.delete()
         return Response({'message': 'Достижение удалено!'}, status=204)
     
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.shortcuts import get_object_or_404
-import yagmail
-
 class DeleteEmployeeAchievementApiView(APIView):
     """Удаляет конкретное достижение сотрудника по его ID"""
 
@@ -304,7 +299,6 @@ class ProfileEmployeeAchievementsApiView(APIView):
             })
 
         return Response({'employee': employee.surname, 'achievements': achievements_data})
-
     
 class EmployeeAchievementByAchievmentApiView(APIView):
     def get(self, request, employee_id, achievment_id):
@@ -336,8 +330,6 @@ class EmployeeAchievementByAchievmentApiView(APIView):
         ]
 
         return Response({'employee': employee.surname, 'achievment': achievment.name, 'achievements': achievements_data})
-
-from django.http import FileResponse
    
 class DownloadAchievementDocumentApiView(APIView):
     def get(self, request, achievement_record_id):
