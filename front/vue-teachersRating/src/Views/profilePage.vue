@@ -335,10 +335,6 @@ const handleFileUpload = (event) => {
             <TableColumn v-else>
               {{ achievement.achievment_name }}
             </TableColumn>
-            <!-- <TableColumn v-if="achievement.meas_unit_score !== 0">{{
-              achievement.score
-            }}</TableColumn>
-            <TableColumn v-else></TableColumn> -->
             <TableColumn>{{
               achievement.score
             }}</TableColumn>

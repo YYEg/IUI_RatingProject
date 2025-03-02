@@ -117,8 +117,6 @@ def generate_personal_report(request):
                         row_num += 1
 
                     ws[f"F{row_num - len(achievements_for_indicator) - 1}"] = total_score
-                    # # Записываем общее количество баллов для показателя
-                    # if achievement["meas_unit_score"] != 0:
                         
 
         # Сохраняем изменения во временный файл

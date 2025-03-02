@@ -221,14 +221,15 @@ class DeleteEmployeeAchievementApiView(APIView):
         
         # Получаем email из тела запроса
         email = request.data.get('email')
+        reason = request.data.get('reason')
         
         if email:
             # Отправка сообщения об удалении
             yag = yagmail.SMTP('rezervdesu15@gmail.com', 'ddvd jduu prdi ktih')  
             yag.send(
                 email,  # Используем email из запроса
-                f"Удаление достижения", 
-                f"Достижение {achievement.full_achivment_name} было удалено ввиду его некорректности, исправьте ошибки и внесите корректное достижение"
+                f"Удаление достижения {achievement.full_achivment_name}", 
+                f"Достижение {achievement.full_achivment_name} было удалено ввиду его некорректности, исправьте ошибки и внесите корректное достижение\nПричина удаления: {reason}"
             )
         
         achievement.delete()

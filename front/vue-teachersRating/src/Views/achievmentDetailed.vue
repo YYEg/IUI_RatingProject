@@ -18,6 +18,9 @@ const sortBy = reactive({
   column: 'score',
   order: 'desc'
 })
+const isModalOpen = ref(false) // Состояние модального окна
+const DelReason = ref('') // Причина удаления
+const selectedAchievementId = ref(null) // ID выбранного достижения для удаления
 
 // Шапка и размеры таблицы
 const tableHeads = [
@@ -40,15 +43,24 @@ const getUserData = async () => {
   }
 }
 
-const deleteAchievement = async (achievementId) => {
+const openDeleteModal = (achievementId) => {
+  selectedAchievementId.value = achievementId // Сохраняем ID достижения
+  isModalOpen.value = true // Открываем модальное окно
+}
+
+const closeModal = () => {
+  isModalOpen.value = false // Закрываем модальное окно
+  DelReason.value = '' // Очищаем причину удаления
+}
+
+const deleteAchievement = async () => {
   isDeleting.value = true
   try {
-    console.log(achievementId)
     const response = await axios.delete(
-      `http://127.0.0.1:8000/api/v1/delete_employee_achievement/${achievementId}/`,
+      `http://127.0.0.1:8000/api/v1/delete_employee_achievement/${selectedAchievementId.value}/`,
       {
         headers: { Authorization: `Token ${token.value}` },
-        data: { email: employeeData.value.email } // Добавляем email в тело запроса
+        data: { email: employeeData.value.email, reason: DelReason.value } // Добавляем email и причину удаления в тело запроса
       }
     )
 
@@ -68,6 +80,7 @@ const deleteAchievement = async (achievementId) => {
     console.error('Ошибка удаления достижения:', error)
   } finally {
     isDeleting.value = false
+    closeModal() // Закрываем модальное окно после удаления
   }
 }
 
@@ -77,15 +90,14 @@ onMounted(async () => {
     return
   }
   getUserData()
-  try{
+  try {
     const employeeResponse = await axios.get(
-          `http://127.0.0.1:8000/api/v1/employees/${route.params.empl_id}/`
-        )
-        employeeData.value = employeeResponse.data
-  } catch {
+      `http://127.0.0.1:8000/api/v1/employees/${route.params.empl_id}/`
+    )
+    employeeData.value = employeeResponse.data
+  } catch (error) {
     console.error('Данные сотрудника получить не удалось:', error)
-}
-
+  }
 })
 
 const filteredAchievements = computed(() => {
@@ -116,13 +128,6 @@ const sortedAchievements = computed(() => {
   })
 })
 
-// Вычисляемый список с фильтрацией и сортировкой
-const filteredDepartmentData = computed(() => {
-  return departmentData.value.filter((department) =>
-    department.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-})
-
 const totalScore = computed(() => {
   return sortedAchievements.value.reduce((sum, achievement) => sum + achievement.score, 0)
 })
@@ -136,7 +141,6 @@ const downloadDocument = async (achievementRecordId) => {
       responseType: 'blob'
     })
 
-    // Проверка на успешный ответ (200 OK)
     if (response.status === 200) {
       const contentDisposition = response.headers['content-disposition']
       const contentType = response.headers['content-type']
@@ -144,20 +148,13 @@ const downloadDocument = async (achievementRecordId) => {
         ? contentDisposition.split('filename=')[1].replace(/"/g, '')
         : `document_${achievementRecordId}`
 
-      // Создаем объект Blob из полученных данных
       const blob = new Blob([response.data], { type: contentType })
-
-      // Создаем ссылку для скачивания файла
       const url = URL.createObjectURL(blob)
-
-      // Создаем ссылку для скачивания и программно "кликаем" по ней
       const link = document.createElement('a')
       link.href = url
-      link.download = fileName // Используем имя файла из content-disposition или генерируем собственное
+      link.download = fileName
       document.body.appendChild(link)
       link.click()
-
-      // Очищаем память от созданного объекта URL
       URL.revokeObjectURL(url)
       document.body.removeChild(link)
     } else {
@@ -262,7 +259,7 @@ const downloadDocument = async (achievementRecordId) => {
             <TableColumn>{{ achievement.score }}</TableColumn>
             <TableColumn>
               <button
-                @click="deleteAchievement(achievement.id)"
+                @click="openDeleteModal(achievement.id)"
                 class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
                 :disabled="isDeleting"
               >
@@ -308,6 +305,62 @@ const downloadDocument = async (achievementRecordId) => {
       </BaseTable>
 
       <div class="text-center text-2xl font-bold mt-4">Итого баллов: {{ totalScore }}</div>
+    </div>
+
+    <!-- Модальное окно для удаления -->
+    <div
+      v-if="isModalOpen"
+      class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50"
+    >
+      <div class="bg-white p-5 rounded-lg shadow-lg max-w-lg w-full">
+        <div class="flex justify-between items-center">
+          <h2 class="text-3xl font-sm text-gray-800">Удаление достижения</h2>
+          <button @click="closeModal" class="text-4xl text-red-500">×</button>
+        </div>
+
+        <div class="mt-4">
+          <label for="reason" class="block text-sm font-medium text-gray-700">Причина удаления:</label>
+          <textarea
+            id="reason"
+            v-model="DelReason"
+            class="mt-1 p-2 w-full border border-gray-300 rounded-md"
+            rows="4"
+            placeholder="Введите причину удаления..."
+          ></textarea>
+        </div>
+
+        <div class="mt-4 flex justify-end">
+          <button
+            @click="deleteAchievement"
+            class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+            :disabled="isDeleting"
+          >
+            <span v-if="isDeleting">
+              <svg
+                class="animate-spin h-4 w-4 inline-block"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+            </span>
+            <span v-else>Удалить</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
