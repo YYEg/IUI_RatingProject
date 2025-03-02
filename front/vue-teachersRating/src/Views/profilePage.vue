@@ -112,12 +112,10 @@ const addAchievement = async () => {
   }
 }
 
-
 const closeModal = () => {
   isModalOpen.value = false
 }
 
-// Функция для открытия модального окна
 const openModal = () => {
   isModalOpen.value = true
 }

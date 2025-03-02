@@ -1,7 +1,7 @@
 from django.forms import model_to_dict
 from rest_framework import generics, parsers
 from .models import Employee, Department, Employee_Achievment, Achievment
-from .serializers import EmployeeSerializer, DepartmentSerializer, Employee_AchievmentSerializer, AchievmentSerializer
+from .serializers import DepartmentSerializer, Employee_AchievmentSerializer, AchievmentSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
@@ -43,7 +43,6 @@ class DepartmentApiView(generics.ListAPIView):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
 
-
 class DepartmentRatingApiView(APIView):
     def get(self, request):
         departments = Department.objects.annotate(
@@ -65,7 +64,6 @@ class DepartmentRatingApiView(APIView):
         ]
 
         return Response(department_data)
-
 
 class DepartmentApiViewDetail(generics.RetrieveAPIView):
     queryset = Department.objects.all()
