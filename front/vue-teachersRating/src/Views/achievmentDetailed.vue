@@ -13,7 +13,9 @@ const deletedAchForMail = ref([])
 const employeeData = ref([])
 const token = ref(localStorage.getItem('token') || '')
 const route = useRoute()
+const currentUser = ref(localStorage.getItem('current_id') || '')
 const searchQuery = ref('')
+const role = ref(localStorage.getItem('role') || '')
 const sortBy = reactive({
   column: 'score',
   order: 'desc'
@@ -26,9 +28,10 @@ const selectedAchievementId = ref(null) // ID выбранного достиж�
 const tableHeads = [
   { key: 'id', label: '№' },
   { key: 'name', label: 'Достижение' },
-  { key: 'score', label: 'Балл' }
+  { key: 'score', label: 'Балл' },
+  {label: 'Ссылка'}
 ]
-const tableSizeColumns = '1fr 5fr 2fr 2fr 2fr 2fr'
+const tableSizeColumns = '1fr 5fr 2fr 2fr 2fr'
 
 // Получение данных пользователя
 const getUserData = async () => {
@@ -36,6 +39,7 @@ const getUserData = async () => {
     const achievementsResponse = await axios.get(
       `http://127.0.0.1:8000/api/employee/${route.params.empl_id}/achievement/${route.params.ach_id}/achievements/`
     )
+    console.log(currentUser.value, route.params.empl_id)
     achivmentsData.value = achievementsResponse.data.achievements
     console.log(achivmentsData.value)
   } catch (error) {
@@ -258,47 +262,27 @@ const downloadDocument = async (achievementRecordId) => {
             </TableColumn>
             <TableColumn>{{ achievement.score }}</TableColumn>
             <TableColumn>
-              <button
-                @click="openDeleteModal(achievement.id)"
-                class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
-                :disabled="isDeleting"
-              >
-                <span v-if="isDeleting">
-                  <svg
-                    class="animate-spin h-4 w-4 inline-block"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    ></circle>
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                </span>
-                <span v-else>Удалить</span>
-              </button>
-            </TableColumn>
-            <TableColumn>
-              <button
-                v-if="achievement.verif_doc != null"
-                @click="downloadDocument(achievement.id)"
-                class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
-              >
-                Скачать документ
-              </button>
-            </TableColumn>
-            <TableColumn>
               {{ achievement.verif_link }}
+            </TableColumn>
+            <TableColumn>
+              <div class="row" style="display: flex; gap: 8px">
+                <img
+                  v-if="
+                    route.params.empl_id === currentUser || ['ADMIN', 'ZAV', 'OTV'].includes(role)
+                  "
+                  src="../assets/delete.png"
+                  alt="Логотип"
+                  @click="openDeleteModal(achievement.id)"
+                  style="cursor: pointer; width: 24px; height: 24px"
+                />
+                <img
+                  v-if="achievement.verif_doc != null"
+                  @click="downloadDocument(achievement.id)"
+                  src="../assets/downl.png"
+                  alt="Логотип"
+                  style="cursor: pointer; width: 24px; height: 24px"
+                />
+              </div>
             </TableColumn>
           </TableRow>
         </template>
@@ -319,7 +303,9 @@ const downloadDocument = async (achievementRecordId) => {
         </div>
 
         <div class="mt-4">
-          <label for="reason" class="block text-sm font-medium text-gray-700">Причина удаления:</label>
+          <label for="reason" class="block text-sm font-medium text-gray-700"
+            >Причина удаления:</label
+          >
           <textarea
             id="reason"
             v-model="DelReason"

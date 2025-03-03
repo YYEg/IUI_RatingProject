@@ -18,6 +18,7 @@ const token = ref(localStorage.getItem('token') || '')
 const role = computed(() => localStorage.getItem('role'))
 const selectedAchievement = ref(null)
 const meas_unit = ref('')
+const verif_doc_info = ref('')
 const inputed_meas_unit_val = ref('')
 const inputed_name = ref('')
 const inputed_ver_link = ref('')
@@ -52,6 +53,7 @@ const getUserData = async () => {
     localStorage.setItem('role', userData.value.role)
     localStorage.setItem('department', userData.value.department)
     localStorage.setItem('email', userData.value.email)
+    localStorage.setItem('current_id', userData.value.employee)
     role.value = localStorage.role
     userName.value = userData.value.last_name
     userDepatment.value = userData.value.department
@@ -138,6 +140,7 @@ const setLogout = () => {
   localStorage.removeItem('role')
   localStorage.removeItem('department')
   localStorage.removeItem('logout')
+  localStorage.removeItem('current_id')
   window.location.href = '/login'
 }
 
@@ -208,6 +211,7 @@ const onAchievementChange = async () => {
 
       if (achievement) {
         meas_unit.value = achievement.meas_unit || '' // Подставляем mes_unit
+        verif_doc_info.value = achievement.verif_doc_info || '' // Подставляем mes_unit
       }
     } catch (error) {
       console.error('Ошибка при подстановке данных для достижения', error)
@@ -296,7 +300,6 @@ const handleFileUpload = (event) => {
         Вывести данные в отчет
       </div>
       <div
-        v-if="['ADMIN', 'ZAV', 'OTV'].includes(role)"
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="openModal"
       >
@@ -335,9 +338,7 @@ const handleFileUpload = (event) => {
             <TableColumn v-else>
               {{ achievement.achievment_name }}
             </TableColumn>
-            <TableColumn>{{
-              achievement.score
-            }}</TableColumn>
+            <TableColumn>{{ achievement.score }}</TableColumn>
           </TableRow>
         </template>
       </BaseTable>
@@ -361,6 +362,19 @@ const handleFileUpload = (event) => {
               {{ achievement.number }} {{ achievement.name }}
             </option>
           </select>
+
+          <div class="mt-4">
+            <label for="reason" class="block text-sm font-medium text-gray-700"
+              >Информация о подтверждающем документе:</label
+            >
+            <textarea
+              class="mt-1 p-2 w-full border border-gray-300 rounded-md"
+              rows="4"
+              placeholder="Информация о подтверждающем документе"
+              readonly
+              v-model="verif_doc_info"
+            ></textarea>
+          </div>
 
           <input
             class="text-2xl mt-3 p-2 rounded-xl w-full"
