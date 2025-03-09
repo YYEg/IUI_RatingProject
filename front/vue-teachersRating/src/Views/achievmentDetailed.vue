@@ -690,7 +690,7 @@ const saveAchievement = async () => {
     >
       <div class="bg-white p-5 rounded-lg shadow-lg max-w-lg w-full">
         <div class="flex justify-between items-center">
-          <h2 class="text-3xl font-sm text-gray-800">Добавить достижение</h2>
+          <h2 class="text-3xl font-sm text-gray-800">Изменить достижение</h2>
           <button @click="closeEditModal" class="text-4xl text-red-500">×</button>
         </div>
 
