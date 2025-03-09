@@ -19,11 +19,37 @@ const role = computed(() => localStorage.getItem('role'))
 const selectedAchievement = ref(null)
 const meas_unit = ref('')
 const verif_doc_info = ref('')
+//Для модального окна документом
 const inputed_meas_unit_val = ref('')
 const inputed_name = ref('')
 const inputed_ver_link = ref('')
 const inputed_doc_ver_link = ref('')
 const isModalOpen = ref(false)
+//Для модального статейного окна
+const pubTypes = ref([])
+const pubGriefs = ref([])
+const pubLevels = ref([])
+const inputed_language_pub = ref('')
+const inputed_doi = ref('')
+const inputed_empl_authors = ref('')
+const inputed_stud_authors = ref('')
+const inputed_out_authors = ref('')
+const inputed_bibliographic = ref('')
+const inputed_publication_name = ref('')
+const inputed_publicator = ref('')
+const inputed_publication_date = ref('')
+const inputed_yearVolNum = ref('')
+const inputed_conference_status = ref('')
+const inputed_conference_date = ref('')
+const inputed_conference_name = ref('')
+// Выборы типа, грифа, уровня
+const selectedPubType = ref(null)
+const selectedPubGrief = ref(null)
+const selectedPubLevel = ref(null)
+
+const isPub = ref('')
+const hasPublication = ref('')
+const hasConference = ref('')
 
 // Шапка и размеры таблицы
 const tableHeads = [
@@ -34,21 +60,47 @@ const tableHeads = [
 const tableSizeColumns = '1fr 8fr 2fr'
 const searchQuery = ref('')
 const sortBy = reactive({
-  column: 'score',
-  order: 'desc'
+  column: 'number',
+  order: 'asc'
 })
+
+const fetchPubTypes = async () => {
+  try {
+    const response = await axios.get('http://127.0.0.1:8000/api/v1/pub_types/')
+    pubTypes.value = response.data
+  } catch (error) {
+    console.error('Ошибка при загрузке типов публикаций:', error)
+  }
+}
+
+const fetchPubGriefs = async () => {
+  try {
+    const response = await axios.get('http://127.0.0.1:8000/api/v1/pub_griefs/')
+    pubGriefs.value = response.data
+  } catch (error) {
+    console.error('Ошибка при загрузке грифов публикаций:', error)
+  }
+}
+
+const fetchPubLevels = async (griefId) => {
+  try {
+    const response = await axios.get(`http://127.0.0.1:8000/api/v1/pub_levels/?grief_id=${griefId}`)
+    pubLevels.value = response.data
+  } catch (error) {
+    console.error('Ошибка при загрузке уровней публикаций:', error)
+  }
+}
 
 // Получение данных пользователя
 const getUserData = async () => {
   try {
     const response = await axios.get('http://127.0.0.1:8000/profile/', {
       headers: {
-        Authorization: `Token ${token.value}` // Убедитесь, что токен определён
+        Authorization: `Token ${token.value}`
       }
     })
 
     userData.value = response.data
-    console.log(userData.value)
     teacherId.value = userData.value.employee // Установите teacherId из userData
     localStorage.setItem('role', userData.value.role)
     localStorage.setItem('department', userData.value.department)
@@ -82,11 +134,41 @@ const addAchievement = async () => {
     data.append('employee', userData.value.employee)
     data.append('achievment', selectedAchievement.value)
     data.append('meas_unit_val', inputed_meas_unit_val.value)
-    data.append('verif_doc', inputed_doc_ver_link.value) // Добавляем файл
+    data.append('verif_doc', inputed_doc_ver_link.value)
     data.append('verif_link', inputed_ver_link.value)
     data.append('full_achivment_name', inputed_name.value)
     data.append('score', inputed_meas_unit_val.value * oneAch.data.meas_unit_score)
     data.append('reciving_date', new Date().toISOString().split('T')[0])
+    // Внешние ключи
+    data.append('pub_type', selectedPubType.value)
+    data.append('pub_grief', selectedPubGrief.value)
+    data.append('pub_level', selectedPubLevel.value)
+    //остальные поля
+    data.append('language_pub', inputed_language_pub.value)
+    data.append('doi', inputed_doi.value)
+    data.append('empl_authors', inputed_empl_authors.value)
+    data.append('stud_authors', inputed_stud_authors.value)
+    data.append('out_authors', inputed_out_authors.value)
+    data.append('bibliographic', inputed_bibliographic.value)
+    data.append('publication_name', inputed_publication_name.value)
+    data.append('publicator', inputed_publicator.value)
+    // Добавляем publication_date только если она не пустая
+    if (inputed_publication_date.value) {
+      data.append(
+        'publication_date',
+        new Date(inputed_publication_date.value).toISOString().split('T')[0]
+      )
+    }
+    data.append('yearVolNum', inputed_yearVolNum.value)
+    data.append('conference_status', inputed_conference_status.value)
+    // Добавляем conference_date только если она не пустая
+    if (inputed_conference_date.value) {
+      data.append(
+        'conference_date',
+        new Date(inputed_conference_date.value).toISOString().split('T')[0]
+      )
+    }
+    data.append('conference_name', inputed_conference_name.value)
 
     const response = await axios.post('http://127.0.0.1:8000/api/v1/employee_achievment/', data, {
       headers: {
@@ -106,6 +188,33 @@ const addAchievement = async () => {
     setTimeout(() => {
       successMessage.value = ''
     }, 3000)
+    inputed_meas_unit_val.value = ''
+    inputed_name.value = ''
+    inputed_ver_link.value = ''
+    inputed_doc_ver_link.value = null // Для файла лучше использовать null
+
+    // Для модального статейного окна
+    pubTypes.value = []
+    pubGriefs.value = []
+    pubLevels.value = []
+    inputed_language_pub.value = ''
+    inputed_doi.value = ''
+    inputed_empl_authors.value = ''
+    inputed_stud_authors.value = ''
+    inputed_out_authors.value = ''
+    inputed_bibliographic.value = ''
+    inputed_publication_name.value = ''
+    inputed_publicator.value = ''
+    inputed_publication_date.value = ''
+    inputed_yearVolNum.value = ''
+    inputed_conference_status.value = ''
+    inputed_conference_date.value = ''
+    inputed_conference_name.value = ''
+
+    // Сброс выбранных значений для типа, грифа и уровня
+    selectedPubType.value = null
+    selectedPubGrief.value = null
+    selectedPubLevel.value = null
   } catch (error) {
     console.error('Ошибка при добавлении достижения:', error)
     errorMessage.value = 'Ошибка при добавлении достижения!'
@@ -119,6 +228,33 @@ const addAchievement = async () => {
 
 const closeModal = () => {
   isModalOpen.value = false
+  inputed_meas_unit_val.value = ''
+  inputed_name.value = ''
+  inputed_ver_link.value = ''
+  inputed_doc_ver_link.value = null // Для файла лучше использовать null
+
+  // Для модального статейного окна
+  pubTypes.value = []
+  pubGriefs.value = []
+  pubLevels.value = []
+  inputed_language_pub.value = ''
+  inputed_doi.value = ''
+  inputed_empl_authors.value = ''
+  inputed_stud_authors.value = ''
+  inputed_out_authors.value = ''
+  inputed_bibliographic.value = ''
+  inputed_publication_name.value = ''
+  inputed_publicator.value = ''
+  inputed_publication_date.value = ''
+  inputed_yearVolNum.value = ''
+  inputed_conference_status.value = ''
+  inputed_conference_date.value = ''
+  inputed_conference_name.value = ''
+
+  // Сброс выбранных значений для типа, грифа и уровня
+  selectedPubType.value = null
+  selectedPubGrief.value = null
+  selectedPubLevel.value = null
 }
 
 const openModal = () => {
@@ -133,6 +269,8 @@ onMounted(async () => {
     return
   }
   getUserData()
+  await fetchPubTypes()
+  await fetchPubGriefs()
 })
 
 const setLogout = () => {
@@ -205,13 +343,19 @@ const totalScore = computed(() => {
 })
 
 const onAchievementChange = async () => {
+  selectedPubGrief.value = ''
+  selectedPubLevel.value = ''
+  selectedPubType.value = ''
   if (selectedAchievement.value) {
     try {
       const achievement = allAchData.value.find((ach) => ach.id === selectedAchievement.value)
 
       if (achievement) {
-        meas_unit.value = achievement.meas_unit || '' // Подставляем mes_unit
-        verif_doc_info.value = achievement.verif_doc_info || '' // Подставляем mes_unit
+        meas_unit.value = achievement.meas_unit || ''
+        verif_doc_info.value = achievement.verif_doc_info || ''
+        isPub.value = achievement.is_pub || false
+        hasPublication.value = achievement.is_pub || false
+        hasConference.value = achievement.is_pub || false
       }
     } catch (error) {
       console.error('Ошибка при подстановке данных для достижения', error)
@@ -228,22 +372,24 @@ const handleFileUpload = (event) => {
     inputed_doc_ver_link.value = file
   }
 }
+
+
 </script>
 
 <template>
   <div class="h-full">
     <headerBlock>
-      <div class="grid grid-cols-2">
-        <div
+      <div class="grid grid-cols-1">
+        <!-- <div
           class="ml-4 flex justify-center items-center text-black bg-white text-2xl p-4 text-center font-sm cursor-pointer bg-blue-900 rounded-2xl shadow-2xl"
         >
           {{ userName }}
-        </div>
+        </div> -->
         <div
-          class="ml-4 flex justify-center items-center text-black bg-white text-2xl p-4 text-center font-sm transition hover:scale-105 cursor-pointer bg-blue-900 rounded-2xl shadow-2xl"
+          class="ml-4 flex justify-end items-end text-black p-4 text-end font-sm transition hover:scale-105 cursor-pointer"
           @click="setLogout()"
         >
-          Выйти
+          <img src="../assets/kost.png" alt="Логотип" class="h-20 w-auto" />
         </div>
       </div>
     </headerBlock>
@@ -363,60 +509,258 @@ const handleFileUpload = (event) => {
             </option>
           </select>
 
-          <div class="mt-4">
-            <label for="reason" class="block text-sm font-medium text-gray-700"
-              >Информация о подтверждающем документе:</label
-            >
+          <!-- Подтверждение документом -->
+          <div v-if="!isPub">
+            <div class="mt-4">
+              <label for="reason" class="block text-sm font-medium text-gray-700"
+                >Информация о подтверждающем документе:</label
+              >
+              <textarea
+                class="mt-1 p-2 w-full border border-gray-300 rounded-md"
+                rows="2"
+                placeholder="Информация о подтверждающем документе"
+                readonly
+                v-model="verif_doc_info"
+              ></textarea>
+            </div>
+
+            <input
+              class="text-l mt-3 p-2 rounded-xl w-full"
+              v-model="inputed_name"
+              placeholder="Полное наименование..."
+            />
+
+            <div class="grid grid-cols-2">
+              <div>
+                <!-- Подставленный mes_unit -->
+
+                <input
+                  class="text-l text-right mt-3 p-2 rounded-xl w-full"
+                  v-model="meas_unit"
+                  placeholder="Единица измерения..."
+                  readonly
+                />
+              </div>
+              <div>
+                <!-- mes_unit_val -->
+                <input
+                  class="text-l mt-3 p-2 rounded-xl w-full"
+                  v-model="inputed_meas_unit_val"
+                  placeholder="Значение единицы измерения..."
+                />
+              </div>
+            </div>
+            <input
+              class="text-l mt-3 p-2 rounded-xl w-full"
+              v-model="inputed_ver_link"
+              placeholder="Ссылка для подтверждения..."
+            />
+
+            <input
+              type="file"
+              class="text-l mt-3 p-2 rounded-xl w-full"
+              @change="handleFileUpload"
+              accept=".pdf,.docx,.jpg,.png"
+              ref="fileInput"
+            />
+          </div>
+
+          <!-- Статейное подтверждение -->
+          <div v-if="isPub">
+            <!-- Информация 1й уровень -->
+            <div class="flex grid grid-cols-3">
+              <div>
+                <!-- Выбор типа публикации -->
+                <select v-model="selectedPubType" class="text-2xl mt-3 p-2 rounded-xl w-full">
+                  <option v-for="pubType in pubTypes" :key="pubType.id" :value="pubType.id">
+                    {{ pubType.name }}
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <!-- Выбор грифа публикации -->
+                <select
+                  v-model="selectedPubGrief"
+                  @change="fetchPubLevels(selectedPubGrief)"
+                  class="text-2xl mt-3 p-2 rounded-xl w-full"
+                >
+                  <option v-for="grief in pubGriefs" :key="grief.id" :value="grief.id">
+                    {{ grief.name }}
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <!-- Выбор уровня публикации (если есть уровни) -->
+                <select
+                  v-if="selectedPubGrief && pubLevels.length > 0"
+                  v-model="selectedPubLevel"
+                  class="text-2xl mt-3 p-2 rounded-xl w-full"
+                >
+                  <option v-for="level in pubLevels" :key="level.id" :value="level.id">
+                    {{ level.name }}
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="flex grid grid-cols-3">
+              <div>
+                <!-- Язык -->
+                <input
+                  class="text-l mt-3 p-2 rounded-xl w-full"
+                  v-model="inputed_language_pub"
+                  placeholder="Язык оригинала..."
+                />
+              </div>
+              <div>
+                <!-- Наименование -->
+                <input
+                  class="text-l mt-3 p-2 rounded-xl w-full"
+                  v-model="inputed_name"
+                  placeholder="Наименование..."
+                />
+              </div>
+              <div>
+                <!-- DOI -->
+                <input
+                  class="text-l mt-3 p-2 rounded-xl w-full"
+                  v-model="inputed_doi"
+                  placeholder="DOI"
+                />
+              </div>
+            </div>
+
+            <!-- Информация 2й уровень авторы -->
+            <input
+              class="text-l mt-3 p-2 rounded-xl w-full"
+              v-model="inputed_empl_authors"
+              placeholder="Авторы сотрудники..."
+            />
+            <input
+              class="text-l mt-3 p-2 rounded-xl w-full"
+              v-model="inputed_stud_authors"
+              placeholder="Авторы студенты..."
+            />
+            <input
+              class="text-l mt-3 p-2 rounded-xl w-full"
+              v-model="inputed_out_authors"
+              placeholder="Внешние авторы..."
+            />
             <textarea
               class="mt-1 p-2 w-full border border-gray-300 rounded-md"
-              rows="4"
-              placeholder="Информация о подтверждающем документе"
+              rows="2"
+              placeholder="Библиографическое описание..."
               readonly
-              v-model="verif_doc_info"
+              v-model="inputed_bibliographic"
             ></textarea>
-          </div>
 
-          <input
-            class="text-2xl mt-3 p-2 rounded-xl w-full"
-            v-model="inputed_name"
-            placeholder="Полное наименование..."
-          />
-
-          <div class="grid grid-cols-2">
-            <div>
-              <!-- Подставленный mes_unit -->
+            <!-- Информация 3й уровень данные об издании -->
+            <div v-if="hasPublication">
+              <div class="text-xl mt-2 text-center rounded-xl w-full">Данные об издании:</div>
               <input
-                class="text-2xl text-right mt-3 p-2 rounded-xl w-full"
-                v-model="meas_unit"
-                placeholder="Единица измерения..."
-                readonly
+                class="text-l mt-3 p-2 rounded-xl w-full"
+                v-model="inputed_publication_name"
+                placeholder="Наименование издания..."
+              />
+              <div class="flex grid grid-cols-3">
+                <div>
+                  <!-- Издатель -->
+                  <input
+                    class="text-l mt-3 p-2 rounded-xl w-full"
+                    v-model="inputed_publicator"
+                    placeholder="Издатель..."
+                  />
+                </div>
+                <div>
+                  <!-- Дата -->
+                  <input
+                    class="text-l mt-3 p-2 rounded-xl w-full"
+                    type="date"
+                    v-model="inputed_publication_date"
+                    placeholder="Дата печати/публикации..."
+                  />
+                </div>
+                <div>
+                  <!-- Год,том,номер издания -->
+                  <input
+                    class="text-l mt-3 p-2 rounded-xl w-full"
+                    v-model="inputed_yearVolNum"
+                    placeholder="Год,том,номер издания..."
+                  />
+                </div>
+              </div>
+
+              <input
+                class="text-l mt-3 p-2 rounded-xl w-full"
+                v-model="inputed_ver_link"
+                placeholder="Ссылка для подтверждения..."
+              />
+              <div class="text-l mt-1 rounded-xl w-full">Загрузка текста статьи:</div>
+              <input
+                type="file"
+                class="text-l mt-1 p-2 rounded-xl w-full"
+                @change="handleFileUpload"
+                accept=".pdf,.docx,.jpg,.png,.xls,.zip"
+                ref="fileInput2"
               />
             </div>
-            <div>
-              <!-- mes_unit_val -->
+
+            <!-- Уровень 4 Инофрмация о конференции -->
+            <div v-if="hasConference">
+              <div class="text-xl mt-2 text-center rounded-xl w-full">Данные об конференции:</div>
+              <div class="grid grid-cols-2">
+                <div>
+                  <!-- Статус конференции -->
+                  <input
+                    class="text-l mt-3 p-2 rounded-xl w-full"
+                    v-model="inputed_conference_status"
+                    placeholder="Статус конференции..."
+                  />
+                </div>
+                <div>
+                  <!-- Дата конференции -->
+                  <div>
+                    <input
+                      class="text-l mt-3 p-2 rounded-xl w-full"
+                      type="date"
+                      v-model="inputed_conference_date"
+                      placeholder="Дата печати/публикации..."
+                    />
+                  </div>
+                </div>
+              </div>
+              <!-- Полное наименование конференции -->
               <input
-                class="text-2xl mt-3 p-2 rounded-xl w-full"
-                v-model="inputed_meas_unit_val"
-                placeholder="Значение единицы измерения..."
+                class="text-l mt-3 p-2 rounded-xl w-full"
+                v-model="inputed_conference_name"
+                placeholder="Полное наименование конференции..."
               />
+              <div class="grid grid-cols-2">
+                <div>
+                  <!-- Подставленный mes_unit -->
+
+                  <input
+                    class="text-l text-right mt-3 p-2 rounded-xl w-full"
+                    v-model="meas_unit"
+                    placeholder="Единица измерения..."
+                    readonly
+                  />
+                </div>
+                <div>
+                  <!-- mes_unit_val -->
+                  <input
+                    class="text-l mt-3 p-2 rounded-xl w-full"
+                    v-model="inputed_meas_unit_val"
+                    placeholder="Значение единицы измерения..."
+                  />
+                </div>
+              </div>
             </div>
           </div>
-          <input
-            class="text-2xl mt-3 p-2 rounded-xl w-full"
-            v-model="inputed_ver_link"
-            placeholder="Ссылка для подтверждения..."
-          />
-
-          <input
-            type="file"
-            class="text-2xl mt-3 p-2 rounded-xl w-full"
-            @change="handleFileUpload"
-            accept=".pdf,.docx,.jpg,.png"
-            ref="fileInput"
-          />
 
           <div
-            class="w-full mt-2 shadow-2xl text-center text-2xl font-bold transition hover:scale-105 cursor-pointer p-2 rounded-2xl border-2 border-black"
+            class="w-full mt-2 shadow-2xl text-center text-xl transition hover:scale-105 cursor-pointer p-2 rounded-2xl border-2 border-black"
             @click="addAchievement()"
           >
             Добавить
@@ -437,6 +781,7 @@ const handleFileUpload = (event) => {
           </transition>
         </div>
       </div>
+      <!-- Конец модального окна -->
     </div>
   </div>
 </template>

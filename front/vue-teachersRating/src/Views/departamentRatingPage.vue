@@ -77,15 +77,10 @@ const sortedDepartmentData = computed(() => {
     <headerBlock>
       <div class="flex justify-end">
         <div
-          class="flex justify-end w-80 p-4 transition hover:scale-105 cursor-pointer bg-white rounded-2xl shadow-2xl"
+          class="flex justify-end w-content p-4 transition hover:scale-105 cursor-pointer"
           @click="() => $router.push('/profile')"
         >
-          <div
-            class="w-full flex justify-center items-center text-black text-3xl text-center font-sm"
-          >
-            Личный кабинет
-          </div>
-          <img src="../assets/profile.png" alt="Логотип" class="mr-4 h-20 w-auto" />
+          <img src="../assets/vvv.png" alt="Логотип" class="h-20 w-auto" />
         </div>
       </div>
     </headerBlock>

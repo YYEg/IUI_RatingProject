@@ -42,7 +42,7 @@ def generate_personal_report(request):
         print("Groups:", groups)  # Отладочный вывод
 
         # Получаем и заполняем показатели
-        achievements = Achievment.objects.all().values('id', 'group_id', 'parent_id', 'number', 'name', 'meas_unit', 'meas_unit_score')
+        achievements = Achievment.objects.all().values('id', 'group_id', 'parent_id', 'number', 'name', 'meas_unit', 'meas_unit_score', 'verif_doc_info')
         achievements = list(achievements)
         print("Achievements:", achievements)  # Отладочный вывод
 
@@ -95,6 +95,8 @@ def generate_personal_report(request):
                     # Записываем показатель
                     ws[f"B{row_num}"] = achievement["number"] + achievement["name"]
                     ws[f"C{row_num}"] = achievement["meas_unit"]
+                    ws[f"D{row_num}"] = achievement["meas_unit_score"]
+                    ws[f"E{row_num}"] = achievement["verif_doc_info"]
 
                     # Применяем жирный шрифт к строке показателя
                     for col in ['B', 'C', 'D', 'E', 'F']:
