@@ -26,7 +26,7 @@ const errorMessage = ref('')
 const verif_doc_info = ref('')
 const sortBy = reactive({
   column: 'number',
-  order: 'asc'
+  order: 'desc'
 })
 const isModalOpen = ref(false) // Состояние модального окна
 const DelReason = ref('') // Причина удаления

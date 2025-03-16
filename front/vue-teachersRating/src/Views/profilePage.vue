@@ -48,8 +48,8 @@ const selectedPubGrief = ref(null)
 const selectedPubLevel = ref(null)
 
 const isPub = ref('')
-const hasPublication = ref('')
-const hasConference = ref('')
+const hasPublication = ref(false)
+const hasConference = ref(false)
 
 // Шапка и размеры таблицы
 const tableHeads = [
@@ -262,13 +262,14 @@ const openModal = () => {
 }
 
 onMounted(async () => {
+  getUserData()
   // Проверяем, есть ли токен
   if (!token.value) {
     // Если токена нет, перенаправляем на страницу авторизации
     window.location.href = '/login'
     return
   }
-  getUserData()
+  
   await fetchPubTypes()
   await fetchPubGriefs()
 })
@@ -354,8 +355,8 @@ const onAchievementChange = async () => {
         meas_unit.value = achievement.meas_unit || ''
         verif_doc_info.value = achievement.verif_doc_info || ''
         isPub.value = achievement.is_pub || false
-        hasPublication.value = achievement.is_pub || false
-        hasConference.value = achievement.is_pub || false
+        hasPublication.value = achievement.has_publication || false
+        hasConference.value = achievement.has_conference || false
       }
     } catch (error) {
       console.error('Ошибка при подстановке данных для достижения', error)
@@ -372,19 +373,12 @@ const handleFileUpload = (event) => {
     inputed_doc_ver_link.value = file
   }
 }
-
-
 </script>
 
 <template>
   <div class="h-full">
     <headerBlock>
       <div class="grid grid-cols-1">
-        <!-- <div
-          class="ml-4 flex justify-center items-center text-black bg-white text-2xl p-4 text-center font-sm cursor-pointer bg-blue-900 rounded-2xl shadow-2xl"
-        >
-          {{ userName }}
-        </div> -->
         <div
           class="ml-4 flex justify-end items-end text-black p-4 text-end font-sm transition hover:scale-105 cursor-pointer"
           @click="setLogout()"
@@ -393,6 +387,12 @@ const handleFileUpload = (event) => {
         </div>
       </div>
     </headerBlock>
+
+    <div
+      class="mx-4 flex justify-center items-center text-black text-3xl p-4 text-center font-sm cursor-pointer"
+    >
+      {{ userName }}
+    </div>
 
     <div class="flex grid grid-cols-2 items-center mt-4 mx-4">
       <div class="relative">

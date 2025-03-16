@@ -95,7 +95,8 @@ def generate_personal_report(request):
                     # Записываем показатель
                     ws[f"B{row_num}"] = achievement["number"] + achievement["name"]
                     ws[f"C{row_num}"] = achievement["meas_unit"]
-                    ws[f"D{row_num}"] = achievement["meas_unit_score"]
+                    if achievement["meas_unit_score"] != 0:
+                        ws[f"D{row_num}"] = achievement["meas_unit_score"]
                     ws[f"E{row_num}"] = achievement["verif_doc_info"]
 
                     # Применяем жирный шрифт к строке показателя
