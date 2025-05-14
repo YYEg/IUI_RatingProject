@@ -1,7 +1,7 @@
 from .generate_personal_report import generate_personal_report
 from rest_framework import generics, parsers
-from .models import Employee, Department, Employee_Achievment, Achievment, Pub_Grief, Pub_Level, Pub_Type
-from .serializers import DepartmentSerializer, Employee_AchievmentSerializer, AchievmentSerializer, PubLevelSerializer, PubGriefSerializer, PubTypeSerializer
+from .models import Employee, Department, EmployeeAchievment, Achievment, PubGrief, PubLevel, PubType
+from .serializers import DepartmentSerializer, EmployeeAchievmentSerializer, AchievmentSerializer, PubLevelSerializer, PubGriefSerializer, PubTypeSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
@@ -19,7 +19,7 @@ from django.http import JsonResponse
 class EmployeeApiView(APIView):
     def get(self, request):
         employees = Employee.objects.annotate(
-            total_score=Sum('employee_achievment__score'),
+            total_score=Sum('employeeachievment__score'),
             rating=Window(
                 expression=Rank(),
                 order_by=F('total_score').desc()
@@ -48,7 +48,7 @@ class DepartmentApiView(generics.ListAPIView):
 class DepartmentRatingApiView(APIView):
     def get(self, request):
         departments = Department.objects.annotate(
-            total_score=Sum('employee__employee_achievment__score'),
+            total_score=Sum('employee__employeeachievment__score'),
             rating=Window(
                 expression=Rank(),
                 order_by=F('total_score').desc()
@@ -79,7 +79,7 @@ class DepartmentTeachersApiView(APIView):
 
         # Получаем преподавателей только этой кафедры с суммой их достижений
         teachers = Employee.objects.filter(department=department).annotate(
-            total_score=Sum('employee_achievment__score')  # Суммируем баллы достижений
+            total_score=Sum('employeeachievment__score')  # Суммируем баллы достижений
         )
 
         # Сериализуем данные
@@ -137,114 +137,76 @@ class OneAchievmentApiView(APIView):
         return Response(data)
 
 class EmployeeAchievementDetailView(generics.RetrieveAPIView):
-    serializer_class = Employee_AchievmentSerializer
+    serializer_class = EmployeeAchievmentSerializer
     lookup_field = 'id'
 
     def get_queryset(self):
-        return Employee_Achievment.objects.filter(id=self.kwargs.get(self.lookup_field))
+        return EmployeeAchievment.objects.filter(id=self.kwargs.get(self.lookup_field))
 
 
-class Employee_AchievmentApiView(generics.ListCreateAPIView):
-    queryset = Employee_Achievment.objects.all()
-    serializer_class = Employee_AchievmentSerializer
-    parser_classes = [parsers.MultiPartParser]  # Указываем парсер для обработки загрузки файлов
+class EmployeeAchievmentApiView(generics.ListCreateAPIView):
+    queryset = EmployeeAchievment.objects.all()
+    serializer_class = EmployeeAchievmentSerializer
+    parser_classes = [parsers.MultiPartParser]
 
     def post(self, request):
         employee = get_object_or_404(Employee, id=request.data['employee'])
         achievment = get_object_or_404(Achievment, id=request.data['achievment'])
-        # Если файл загружается, он будет доступен через request.FILES['verif_doc']
         verif_doc = request.FILES.get('verif_doc')
-        # Получаем объекты Pub_Type, Pub_Grief и Pub_Level по их ID
-        pub_type = get_object_or_404(Pub_Type, id=request.data.get('pub_type')) if request.data.get('pub_type') else None
-        pub_grief = get_object_or_404(Pub_Grief, id=request.data.get('pub_grief')) if request.data.get('pub_grief') else None
-        pub_level = get_object_or_404(Pub_Level, id=request.data.get('pub_level')) if request.data.get('pub_level') else None
-        # Создаем новый объект Employee_Achievment с новыми полями
-        ach_new = Employee_Achievment.objects.create(
+        details = request.data.get('details')
+        if details and isinstance(details, str):
+            import json
+            try:
+                details = json.loads(details)
+            except Exception:
+                details = None
+        ach_new = EmployeeAchievment.objects.create(
             employee=employee,
             achievment=achievment,
             meas_unit_val=request.data['meas_unit_val'],
             score=request.data['score'],
-            verif_doc=verif_doc,  # Загрузка файла
-            verif_link=request.data['verif_link'],
+            verif_doc=verif_doc,
+            verif_link=request.data.get('verif_link'),
             full_achivment_name=request.data['full_achivment_name'],
-            reciving_date=request.data['reciving_date'],
-            pub_type=pub_type,  # Передаем объект Pub_Type
-            pub_grief=pub_grief,  # Передаем объект Pub_Grief
-            pub_level=pub_level,  # Передаем объект Pub_Level
-            pub_language=request.data.get('language_pub', ''),
-            pub_doi=request.data.get('doi', ''),
-            pub_authors_employees=request.data.get('empl_authors', ''),
-            pub_authors_students=request.data.get('stud_authors', ''),
-            pub_out_authors=request.data.get('out_authors', ''),
-            bibliographic_desc=request.data.get('bibliographic', ''),
-            publication_name=request.data.get('publication_name', ''),
-            publicator=request.data.get('publicator', ''),
-            publication_data=request.data.get('publication_date', None),
-            publication_year_vol_num=request.data.get('yearVolNum', ''),
-            conference_status=request.data.get('conference_status', ''),
-            conference_date=request.data.get('conference_date', None),
-            conference_name=request.data.get('conference_name', '')
+            reciving_date=request.data.get('reciving_date'),
+            details=details
         )
+        return Response({'Новое достижение': EmployeeAchievmentSerializer(ach_new).data})
 
-        return Response({'Новое достижение': Employee_AchievmentSerializer(ach_new).data})
-    
     def put(self, request, id):
         try:
-            # Получаем запись по ID
-            achievement = get_object_or_404(Employee_Achievment, id=id)
-
-            # Обновляем поля
+            achievement = get_object_or_404(EmployeeAchievment, id=id)
             achievement.meas_unit_val = request.data.get('meas_unit_val', achievement.meas_unit_val)
             achievement.score = request.data.get('score', achievement.score)
             achievement.verif_link = request.data.get('verif_link', achievement.verif_link)
             achievement.full_achivment_name = request.data.get('full_achivment_name', achievement.full_achivment_name)
             achievement.reciving_date = request.data.get('reciving_date', achievement.reciving_date)
-
-            # Обновляем связанные объекты
-            if request.data.get('pub_type'):
-                achievement.pub_type = get_object_or_404(Pub_Type, id=request.data.get('pub_type'))
-            if request.data.get('pub_grief'):
-                achievement.pub_grief = get_object_or_404(Pub_Grief, id=request.data.get('pub_grief'))
-            if request.data.get('pub_level'):
-                achievement.pub_level = get_object_or_404(Pub_Level, id=request.data.get('pub_level'))
-
-            # Обновляем остальные поля
-            achievement.pub_language = request.data.get('language_pub', achievement.pub_language)
-            achievement.pub_doi = request.data.get('doi', achievement.pub_doi)
-            achievement.pub_authors_employees = request.data.get('empl_authors', achievement.pub_authors_employees)
-            achievement.pub_authors_students = request.data.get('stud_authors', achievement.pub_authors_students)
-            achievement.pub_out_authors = request.data.get('out_authors', achievement.pub_out_authors)
-            achievement.bibliographic_desc = request.data.get('bibliographic', achievement.bibliographic_desc)
-            achievement.publication_name = request.data.get('publication_name', achievement.publication_name)
-            achievement.publicator = request.data.get('publicator', achievement.publicator)
-            achievement.publication_data = request.data.get('publication_date', achievement.publication_data)
-            achievement.publication_year_vol_num = request.data.get('yearVolNum', achievement.publication_year_vol_num)
-            achievement.conference_status = request.data.get('conference_status', achievement.conference_status)
-            achievement.conference_date = request.data.get('conference_date', achievement.conference_date)
-            achievement.conference_name = request.data.get('conference_name', achievement.conference_name)
-
-            # Если файл загружается, обновляем его
+            details = request.data.get('details')
+            if details and isinstance(details, str):
+                import json
+                try:
+                    details = json.loads(details)
+                except Exception:
+                    details = None
+            if details is not None:
+                achievement.details = details
             if 'verif_doc' in request.FILES:
                 achievement.verif_doc = request.FILES['verif_doc']
-
-            # Сохраняем изменения
             achievement.save()
-
-            return Response({'Обновленное достижение': Employee_AchievmentSerializer(achievement).data}, status=status.HTTP_200_OK)
-
+            return Response({'Обновленное достижение': EmployeeAchievmentSerializer(achievement).data}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class EmployeeAchievementUpdateView(generics.UpdateAPIView):
-    queryset = Employee_Achievment.objects.all()
-    serializer_class = Employee_AchievmentSerializer
+    queryset = EmployeeAchievment.objects.all()
+    serializer_class = EmployeeAchievmentSerializer
     parser_classes = [parsers.MultiPartParser]  # Для обработки загрузки файлов
 
     def put(self, request, *args, **kwargs):
         try:
             # Получаем ID из URL
             id = kwargs.get('id')
-            achievement = get_object_or_404(Employee_Achievment, id=id)
+            achievement = get_object_or_404(EmployeeAchievment, id=id)
 
             # Обновляем поля
             achievement.meas_unit_val = request.data.get('meas_unit_val', achievement.meas_unit_val)
@@ -255,11 +217,11 @@ class EmployeeAchievementUpdateView(generics.UpdateAPIView):
 
             # Обновляем связанные объекты
             if request.data.get('pub_type'):
-                achievement.pub_type = get_object_or_404(Pub_Type, id=request.data.get('pub_type'))
+                achievement.pub_type = get_object_or_404(PubType, id=request.data.get('pub_type'))
             if request.data.get('pub_grief'):
-                achievement.pub_grief = get_object_or_404(Pub_Grief, id=request.data.get('pub_grief'))
+                achievement.pub_grief = get_object_or_404(PubGrief, id=request.data.get('pub_grief'))
             if request.data.get('pub_level'):
-                achievement.pub_level = get_object_or_404(Pub_Level, id=request.data.get('pub_level'))
+                achievement.pub_level = get_object_or_404(PubLevel, id=request.data.get('pub_level'))
 
             # Обновляем остальные поля
             achievement.pub_language = request.data.get('language_pub', achievement.pub_language)
@@ -284,7 +246,7 @@ class EmployeeAchievementUpdateView(generics.UpdateAPIView):
             achievement.save()
 
             return Response(
-                {'Обновленное достижение': Employee_AchievmentSerializer(achievement).data},
+                {'Обновленное достижение': EmployeeAchievmentSerializer(achievement).data},
                 status=status.HTTP_200_OK
             )
 
@@ -295,7 +257,7 @@ class EmployeeAchievementsApiView(APIView):
     def get(self, request, employee_id):
         """Возвращает список достижений конкретного сотрудника с их баллами."""
         employee = get_object_or_404(Employee, id=employee_id)
-        achievements = Employee_Achievment.objects.filter(employee=employee)
+        achievements = EmployeeAchievment.objects.filter(employee=employee)
 
         achievements_data = [
             {
@@ -304,27 +266,54 @@ class EmployeeAchievementsApiView(APIView):
                 'score': ach.score,
                 'meas_unit_val': ach.meas_unit_val,
                 'verif_doc': ach.verif_doc,
-                #'number': ach.number
             }
             for ach in achievements
         ]
 
         return Response({'employee': employee.surname, 'achievements': achievements_data})
 
-    
     def delete(self, request, employee_id):
-        achievments = Employee_Achievment.objects.filter(employee_id=employee_id)
+        achievments = EmployeeAchievment.objects.filter(employee_id=employee_id)
         if not achievments.exists():
             return Response({'error': 'Достижения не найдены'}, status=404)
 
         achievments.delete()
         return Response({'message': 'Все достижения сотрудника удалены!'}, status=204)
-    
+
+class EmployeeAchievementDetailApiView(APIView):
+    def get(self, request, id):
+        achievement = get_object_or_404(EmployeeAchievment, id=id)
+        return Response(EmployeeAchievmentSerializer(achievement).data)
+
+    def put(self, request, id):
+        try:
+            achievement = get_object_or_404(EmployeeAchievment, id=id)
+            achievement.meas_unit_val = request.data.get('meas_unit_val', achievement.meas_unit_val)
+            achievement.score = request.data.get('score', achievement.score)
+            achievement.verif_link = request.data.get('verif_link', achievement.verif_link)
+            achievement.full_achivment_name = request.data.get('full_achivment_name', achievement.full_achivment_name)
+            achievement.reciving_date = request.data.get('reciving_date', achievement.reciving_date)
+            details = request.data.get('details')
+            if details and isinstance(details, str):
+                import json
+                try:
+                    details = json.loads(details)
+                except Exception:
+                    details = None
+            if details is not None:
+                achievement.details = details
+            if 'verif_doc' in request.FILES:
+                achievement.verif_doc = request.FILES['verif_doc']
+            achievement.save()
+            return Response({'Обновленное достижение': EmployeeAchievmentSerializer(achievement).data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 class DeleteEmployeeAchievementApiView(APIView):
     """Удаляет конкретное достижение сотрудника по его ID"""
 
     def delete(self, request, achievement_id):
-        achievement = get_object_or_404(Employee_Achievment, id=achievement_id)
+        achievement = get_object_or_404(EmployeeAchievment, id=achievement_id)
         
         # Получаем email из тела запроса
         email = request.data.get('email')
@@ -346,7 +335,7 @@ class DeleteEmployeeAchievementApiView(APIView):
 class UpdateMessage(APIView):
 
     def get(self, request, achievement_id):
-        achievement = get_object_or_404(Employee_Achievment, id=achievement_id)
+        achievement = get_object_or_404(EmployeeAchievment, id=achievement_id)
         
         # Получаем email и причину из query-параметров
         email = request.query_params.get('email')
@@ -400,7 +389,7 @@ class ProfileEmployeeAchievementsApiView(APIView):
         all_achievements = Achievment.objects.all()
 
         # Получаем достижения сотрудника
-        employee_achievements = Employee_Achievment.objects.filter(employee=employee)
+        employee_achievements = EmployeeAchievment.objects.filter(employee=employee)
 
         # Создаем словарь для суммирования баллов по каждому достижению
         achievements_score = {}
@@ -455,7 +444,7 @@ class EmployeeAchievementByAchievmentApiView(APIView):
         achievment = get_object_or_404(Achievment, id=achievment_id)
 
         # Фильтруем достижения сотрудника, соответствующие данному достижению
-        achievements = Employee_Achievment.objects.filter(employee=employee, achievment=achievment)
+        achievements = EmployeeAchievment.objects.filter(employee=employee, achievment=achievment)
 
         # Если достижения не найдены
         if not achievements.exists():
@@ -482,7 +471,7 @@ class EmployeeAchievementByAchievmentApiView(APIView):
 class DownloadAchievementDocumentApiView(APIView):
     def get(self, request, achievement_record_id):
         # Получаем запись достижения по ID
-        achievement_record = get_object_or_404(Employee_Achievment, id=achievement_record_id)
+        achievement_record = get_object_or_404(EmployeeAchievment, id=achievement_record_id)
 
         # Проверяем, есть ли файл
         if not achievement_record.verif_doc:
@@ -515,11 +504,11 @@ class DataciteDoiView(APIView):
         return JsonResponse(data)
     
 class PubTypeApiView(generics.ListAPIView):
-    queryset = Pub_Type.objects.all()
+    queryset = PubType.objects.all()
     serializer_class = PubTypeSerializer
 
 class PubGriefApiView(generics.ListAPIView):
-    queryset = Pub_Grief.objects.all()
+    queryset = PubGrief.objects.all()
     serializer_class = PubGriefSerializer
 
 class PubLevelApiView(generics.ListAPIView):
@@ -527,4 +516,4 @@ class PubLevelApiView(generics.ListAPIView):
 
     def get_queryset(self):
         grief_id = self.request.query_params.get('grief_id')
-        return Pub_Level.objects.filter(pub_grief_id=grief_id)
+        return PubLevel.objects.filter(pub_grief_id=grief_id)

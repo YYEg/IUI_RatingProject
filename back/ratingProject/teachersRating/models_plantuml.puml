@@ -1,0 +1,89 @@
+@startuml
+entity Department {
+    id: int
+    name: varchar(150)
+}
+
+entity Employee {
+    id: int
+    name: varchar(50)
+    surname: varchar(50)
+    parentName: varchar(50)
+    email: varchar(500)
+    position: varchar(500)
+    department_id: int
+}
+
+entity User {
+    id: int
+    username: varchar(150)
+    password: varchar(128)
+    employee_id: int
+    department_id: int
+    role: varchar(50)
+}
+
+entity AchievmentGroup {
+    id: int
+    name: varchar(300)
+    description: varchar(1000)
+}
+
+entity AchievmentType {
+    id: int
+    name: varchar(100)
+    description: varchar(500)
+}
+
+entity Achievment {
+    id: int
+    group_id: int
+    parent_id: int
+    number: varchar(20)
+    name: varchar(300)
+    meas_unit: varchar(100)
+    meas_unit_score: float
+    verif_doc_info: varchar(1000)
+    type_id: int
+}
+
+entity EmployeeAchievment {
+    id: int
+    employee_id: int
+    achievment_id: int
+    meas_unit_val: varchar(50)
+    score: float
+    full_achivment_name: varchar(1000)
+    verif_doc: file
+    verif_link: varchar(2000)
+    reciving_date: date
+    active: bool
+    details: json
+}
+
+entity PubGrief {
+    id: int
+    name: varchar(50)
+    has_levels: bool
+}
+
+entity PubLevel {
+    id: int
+    pub_grief_id: int
+    name: varchar(10)
+}
+
+entity PubType {
+    id: int
+    name: varchar(50)
+}
+
+Employee -- Department : department_id
+User -- Employee : employee_id
+User -- Department : department_id
+Achievment -- AchievmentGroup : group_id
+Achievment -- AchievmentType : type_id
+EmployeeAchievment -- Employee : employee_id
+EmployeeAchievment -- Achievment : achievment_id
+PubLevel -- PubGrief : pub_grief_id
+@enduml

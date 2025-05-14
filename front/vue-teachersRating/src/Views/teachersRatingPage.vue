@@ -65,18 +65,34 @@ const sortedEmployees = computed(() => {
 
 // Вытягиваю данные с бека для всех сотрудников
 onMounted(async () => {
-  // Проверяем, есть ли токен
   if (!token.value) {
-    // Если токена нет, перенаправляем на страницу авторизации
     window.location.href = '/login'
     return
   }
   try {
     const employeeResponse = await axios.get('http://127.0.0.1:8000/api/v1/employees/')
-    employeesData.value = employeeResponse.data
+    if (Array.isArray(employeeResponse.data)) {
+      employeesData.value = employeeResponse.data
+    } else {
+      employeesData.value = []
+      console.error('Некорректный формат данных сотрудников:', employeeResponse.data)
+    }
     console.log(employeesData.value)
   } catch (error) {
-    console.log(error)
+    employeesData.value = []
+    if (error.response) {
+      // Сервер вернул ошибку
+      alert('Ошибка сервера: ' + error.response.status + (error.response.data ? '\n' + JSON.stringify(error.response.data) : ''))
+      console.error('Ошибка сервера:', error.response)
+    } else if (error.request) {
+      // Нет ответа от сервера
+      alert('Нет ответа от сервера. Проверьте соединение.')
+      console.error('Нет ответа от сервера:', error.request)
+    } else {
+      // Прочие ошибки
+      alert('Ошибка: ' + error.message)
+      console.error('Ошибка:', error.message)
+    }
   }
 })
 </script>

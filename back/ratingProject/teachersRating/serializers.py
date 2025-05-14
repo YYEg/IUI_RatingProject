@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Employee, Department, Employee_Achievment, Achievment, Pub_Grief, Pub_Level, Pub_Type
+from .models import Employee, Department, EmployeeAchievment, Achievment, PubGrief, PubLevel, PubType
 
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,22 +17,22 @@ class AchievmentSerializer(serializers.ModelSerializer):
         model = Achievment
         fields = '__all__'
 
-class Employee_AchievmentSerializer(serializers.ModelSerializer):
+class EmployeeAchievmentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Employee_Achievment
+        model = EmployeeAchievment
         fields = '__all__'
 
 class PubTypeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Pub_Type
+        model = PubType
         fields = '__all__'
 
 class PubGriefSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Pub_Grief
+        model = PubGrief
         fields = '__all__'
 
 class PubLevelSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Pub_Level
+        model = PubLevel
         fields = '__all__'

@@ -3,7 +3,7 @@ from openpyxl.styles import Font
 from django.http import FileResponse, HttpResponse
 import shutil
 import tempfile
-from .models import Achievment_groups, Achievment, Employee_Achievment, Employee
+from .models import AchievmentGroup, Achievment, EmployeeAchievment, Employee
 
 def generate_personal_report(request):
     # Получаем teacher_id из параметров запроса
@@ -37,7 +37,7 @@ def generate_personal_report(request):
         ws['A5'].value = Dolznost  # Заменяем значение ячейки A6
 
         # Получаем и заполняем группы
-        groups = Achievment_groups.objects.all().values('id', 'name', 'description')
+        groups = AchievmentGroup.objects.all().values('id', 'name', 'description')
         groups = list(groups)
         print("Groups:", groups)  # Отладочный вывод
 
@@ -47,7 +47,7 @@ def generate_personal_report(request):
         print("Achievements:", achievements)  # Отладочный вывод
 
         # Получаем достижения сотрудника с teacher_id
-        employee_achievements = Employee_Achievment.objects.filter(employee_id=teacher_id).values(
+        employee_achievements = EmployeeAchievment.objects.filter(employee_id=teacher_id).values(
             'id', 'achievment_id', 'full_achivment_name', 'meas_unit_val', 'score'
         )
         employee_achievements = list(employee_achievements)
