@@ -205,25 +205,6 @@ class EmployeeAchievementsView(APIView):
 
         return Response(achievement_data)
 
-# Добавление достижения себе(сотруднику)
-class AddAchievementFileView(APIView):
-    parser_classes = (MultiPartParser, FormParser)
-
-    def post(self, request, format=None):
-        employee_id = request.data.get('employee')
-        achievment_id = request.data.get('achievment')
-
-        # Получаем объекты Employee и Achievment или возвращаем 404
-        employee = get_object_or_404(Employee, id=employee_id)
-        achievment = get_object_or_404(Achievment, id=achievment_id)
-
-        # Создаем новый объект Employee_Achievment_File
-        serializer = Employee_Achievment_FileSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(employee=employee, achievment=achievment)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 # Одно достижение
 class OneAchievmentApiView(generics.RetrieveAPIView):
     queryset = Achievment.objects.all()
@@ -256,3 +237,40 @@ class EmployeeAchievementsByFlagView(APIView):
         ]
 
         return Response(achievement_data)
+# Добавление достижения с файлом себе(сотруднику)
+class AddAchievementFileView(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, format=None):
+        employee_id = request.data.get('employee')
+        achievment_id = request.data.get('achievment')
+
+        # Получаем объекты Employee и Achievment или возвращаем 404
+        employee = get_object_or_404(Employee, id=employee_id)
+        achievment = get_object_or_404(Achievment, id=achievment_id)
+
+        # Создаем новый объект Employee_Achievment_File
+        serializer = Employee_Achievment_FileSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(employee=employee, achievment=achievment)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Добавление публикации сотруднику
+class AddAchievementPublicationView(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, format=None):
+        employee_id = request.data.get('employee')
+        achievment_id = request.data.get('achievment')
+
+        # Получаем объекты Employee и Achievment или возвращаем 404
+        employee = get_object_or_404(Employee, id=employee_id)
+        achievment = get_object_or_404(Achievment, id=achievment_id)
+
+        # Создаем новый объект Employee_Achievment_Publication
+        serializer = Employee_Achievment_PublicationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(employee=employee, achievment=achievment)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

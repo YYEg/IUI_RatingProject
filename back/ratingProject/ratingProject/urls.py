@@ -4,7 +4,8 @@ from rest_framework.authtoken.views import obtain_auth_token
 
 from teachersRating.views import Logout, PubGriefApiView, PubLevelApiView, PubTypeApiView, UserProfileView, \
     EmployeeRankingView, DepartmentRankingView, DepartmentEmployeeRankingView, OneDepartmentView, EmployeeAchievementsView, \
-        AddAchievementFileView, AchievementsListView, OneAchievmentApiView, EmployeeAchievementsByFlagView, OneEmployeeView;
+        AddAchievementFileView, AchievementsListView, OneAchievmentApiView, EmployeeAchievementsByFlagView, OneEmployeeView, \
+            AddAchievementPublicationView;
 
 
 urlpatterns = [
@@ -28,7 +29,9 @@ urlpatterns = [
     path('api/v1/department_employee_ranking/<int:department_id>/', DepartmentEmployeeRankingView.as_view(), name='department_employee_ranking'),
     path('api/v1/employee_achievements/<int:employee_id>/', EmployeeAchievementsView.as_view(), name='employee_achievements'),
     path('api/v1/employees/<int:employee_id>/achievements/<str:is_pub>/<int:achievement_id>/', EmployeeAchievementsByFlagView.as_view(), name='employee_achievements_by_flag'),
+    
     path('api/v1/add_achievement_file/', AddAchievementFileView.as_view(), name='add_achievement_file'),
+    path('api/v1/add_achievement_publication/', AddAchievementPublicationView.as_view(), name='add_achievement_publication'),
      
     #  path('employee_achievments/update/<int:id>/', EmployeeAchievementUpdateView.as_view(), name='employee_achievment-update'),
     #  path('api/v1/update_message/<int:achievement_id>/', UpdateMessage.as_view(), name='update_message_employee_achievement'),

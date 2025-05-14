@@ -109,16 +109,11 @@ const getUserData = async () => {
     role.value = localStorage.role
     userName.value = userData.value.last_name
     userDepatment.value = userData.value.department
-
+    
     const achievementsResponse = await axios.get(
       `http://127.0.0.1:8000/api/v1/employee_achievements/${teacherId.value}`
     )
-    // Сортируем данные по полю number по возрастанию
-    // achivmentsData.value = achievementsResponse.data.achievements.sort(
-    //   (a, b) => a.number - b.number
-    // )
     achivmentsData.value = achievementsResponse.data
-    console.log(achivmentsData.value)
     const AllAchResp = await axios.get('http://127.0.0.1:8000/api/v1/achievements/')
     allAchData.value = AllAchResp.data.filter((item) => item.meas_unit_score !== 0)
   } catch (error) {
@@ -140,39 +135,88 @@ const addAchievementFile = async () => {
     data.append('full_achivment_name', inputed_name.value)
     data.append('score', inputed_meas_unit_val.value * oneAch.data.meas_unit_score)
     data.append('reciving_date', new Date().toISOString().split('T')[0])
-    console.log(data)
-    // // Внешние ключи
-    // data.append('pub_type', selectedPubType.value)
-    // data.append('pub_grief', selectedPubGrief.value)
-    // data.append('pub_level', selectedPubLevel.value)
-    // //остальные поля
-    // data.append('language_pub', inputed_language_pub.value)
-    // data.append('doi', inputed_doi.value)
-    // data.append('empl_authors', inputed_empl_authors.value)
-    // data.append('stud_authors', inputed_stud_authors.value)
-    // data.append('out_authors', inputed_out_authors.value)
-    // data.append('bibliographic', inputed_bibliographic.value)
-    // data.append('publication_name', inputed_publication_name.value)
-    // data.append('publicator', inputed_publicator.value)
-    // // Добавляем publication_date только если она не пустая
-    // if (inputed_publication_date.value) {
-    //   data.append(
-    //     'publication_date',
-    //     new Date(inputed_publication_date.value).toISOString().split('T')[0]
-    //   )
-    // }
-    // data.append('yearVolNum', inputed_yearVolNum.value)
-    // data.append('conference_status', inputed_conference_status.value)
-    // // Добавляем conference_date только если она не пустая
-    // if (inputed_conference_date.value) {
-    //   data.append(
-    //     'conference_date',
-    //     new Date(inputed_conference_date.value).toISOString().split('T')[0]
-    //   )
-    // }
-    // data.append('conference_name', inputed_conference_name.value)
 
     const response = await axios.post('http://127.0.0.1:8000/api/v1/add_achievement_file/', data, {
+      headers: {
+        Authorization: `Token ${token.value}`,
+        'Content-Type': 'multipart/form-data' // Указываем, что отправляем FormData
+      }
+    })
+
+    getUserData()
+    console.log('Достижение успешно добавлено:', response.data)
+
+    selectedAchievement.value = null
+
+    successMessage.value = 'Успешно добавлено достижение!'
+    errorMessage.value = ''
+
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+    inputed_meas_unit_val.value = ''
+    inputed_name.value = ''
+    inputed_ver_link.value = ''
+    inputed_doc_ver_link.value = null // Для файла лучше использовать null
+
+  } catch (error) {
+    console.error('Ошибка при добавлении достижения:', error)
+    errorMessage.value = 'Ошибка при добавлении достижения!'
+    successMessage.value = ''
+
+    setTimeout(() => {
+      errorMessage.value = ''
+    }, 3000)
+  }
+}
+
+const addAchievementPublication = async () => {
+  try {
+    const oneAch = await axios.get(
+      `http://127.0.0.1:8000/api/v1/achievements/${selectedAchievement.value}`
+    )
+    const data = new FormData()
+    data.append('employee', userData.value.employee)
+    data.append('achievment', selectedAchievement.value)
+    data.append('meas_unit_val', inputed_meas_unit_val.value)
+    data.append('verif_doc', inputed_doc_ver_link.value)
+    data.append('verif_link', inputed_ver_link.value)
+    data.append('full_achivment_name', inputed_name.value)
+    data.append('score', inputed_meas_unit_val.value * oneAch.data.meas_unit_score)
+    data.append('reciving_date', new Date().toISOString().split('T')[0])
+    console.log(data)
+    // Внешние ключи
+    data.append('pub_type', selectedPubType.value)
+    data.append('pub_grief', selectedPubGrief.value)
+    data.append('pub_level', selectedPubLevel.value)
+    //остальные поля
+    data.append('language_pub', inputed_language_pub.value)
+    data.append('doi', inputed_doi.value)
+    data.append('empl_authors', inputed_empl_authors.value)
+    data.append('stud_authors', inputed_stud_authors.value)
+    data.append('out_authors', inputed_out_authors.value)
+    data.append('bibliographic', inputed_bibliographic.value)
+    data.append('publication_name', inputed_publication_name.value)
+    data.append('publicator', inputed_publicator.value)
+    // Добавляем publication_date только если она не пустая
+    if (inputed_publication_date.value) {
+      data.append(
+        'publication_date',
+        new Date(inputed_publication_date.value).toISOString().split('T')[0]
+      )
+    }
+    data.append('yearVolNum', inputed_yearVolNum.value)
+    data.append('conference_status', inputed_conference_status.value)
+    console.log(data)
+    // Добавляем conference_date только если она не пустая
+    if (inputed_conference_date.value) {
+      data.append(
+        'conference_date',
+        new Date(inputed_conference_date.value).toISOString().split('T')[0]
+      )
+    }
+    data.append('conference_name', inputed_conference_name.value)
+    const response = await axios.post('http://127.0.0.1:8000/api/v1/add_achievement_publication/', data, {
       headers: {
         Authorization: `Token ${token.value}`,
         'Content-Type': 'multipart/form-data' // Указываем, что отправляем FormData
@@ -372,6 +416,7 @@ const handleFileUpload = (event) => {
 
 <template>
   <div class="h-full">
+    <!-- Шапка -->
     <headerBlock>
       <div class="grid grid-cols-1">
         <div
@@ -388,7 +433,8 @@ const handleFileUpload = (event) => {
     >
       {{ userName }}
     </div>
-
+    
+    <!-- Фильтры -->
     <div class="flex grid grid-cols-2 items-center mt-4 mx-4">
       <div class="relative">
         <input
@@ -426,6 +472,7 @@ const handleFileUpload = (event) => {
       </form>
     </div>
 
+    <!-- Кнопки над таблицей -->
     <div class="grid grid-cols-3 mt-4 mx-4">
       <div
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
@@ -447,7 +494,10 @@ const handleFileUpload = (event) => {
         Добавить достижение
       </div>
     </div>
+
+    
     <div class="p-2">
+      <!-- Таблица -->
       <BaseTable :columnTemplates="tableSizeColumns">
         <TableRow :columnTemplates="tableSizeColumns">
           <TableColumn
@@ -597,6 +647,26 @@ const handleFileUpload = (event) => {
                     {{ level.name }}
                   </option>
                 </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-2">
+              <div>
+                <!-- Подставленный mes_unit -->
+
+                <input
+                  class="text-l text-right mt-3 p-2 rounded-xl w-full"
+                  v-model="meas_unit"
+                  placeholder="Единица измерения..."
+                  readonly
+                />
+              </div>
+              <div>
+                <!-- mes_unit_val -->
+                <input
+                  class="text-l mt-3 p-2 rounded-xl w-full"
+                  v-model="inputed_meas_unit_val"
+                  placeholder="Значение единицы измерения..."
+                />
               </div>
             </div>
             <div class="flex grid grid-cols-3">
@@ -754,11 +824,17 @@ const handleFileUpload = (event) => {
             </div>
           </div>
 
-          <div
+          <div v-if="!isPub"
             class="w-full mt-2 shadow-2xl text-center text-xl transition hover:scale-105 cursor-pointer p-2 rounded-2xl border-2 border-black"
             @click="addAchievementFile()"
           >
             Добавить
+          </div>
+          <div v-else
+            class="w-full mt-2 shadow-2xl text-center text-xl transition hover:scale-105 cursor-pointer p-2 rounded-2xl border-2 border-black"
+            @click="addAchievementPublication()"
+          >
+            Добавить статью
           </div>
 
           <!-- Сообщение об успехе -->
