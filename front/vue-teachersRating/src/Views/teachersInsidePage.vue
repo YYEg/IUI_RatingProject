@@ -47,14 +47,16 @@ const getUserData = async () => {
     role.value = localStorage.role
     
     const achievementsResponse = await axios.get(
-      `http://127.0.0.1:8000/api/v1/employe_achievments/employee/${teacherId.value}`
+      `http://127.0.0.1:8000/api/v1/employee_achievements/${teacherId.value}`
     )
+    achivmentsData.value = achievementsResponse.data
     // Сортируем данные по полю number по возрастанию
-    achivmentsData.value = achievementsResponse.data.achievements.sort(
-      (a, b) => a.number - b.number
-    )
+    // achivmentsData.value = achievementsResponse.data.achievements.sort(
+    //   (a, b) => a.number - b.number
+    // )
+    console.log(achivmentsData.value)
 
-    const AllAchResp = await axios.get('http://127.0.0.1:8000/api/v1/achievments/')
+    const AllAchResp = await axios.get('http://127.0.0.1:8000/api/v1/achievements/')
     allAchData.value = AllAchResp.data.filter((item) => item.meas_unit_score !== 0)
   } catch (error) {
     console.error('Error fetching user data:', error)
@@ -123,14 +125,6 @@ onMounted(async () => {
   getUserData()
 })
 
-const setLogout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('role')
-  localStorage.removeItem('department')
-  localStorage.removeItem('logout')
-  window.location.href = '/login'
-}
-
 const downloadReport = async () => {
   try {
     const response = await axios.get(
@@ -163,14 +157,7 @@ const downloadReport = async () => {
 
 const filteredAchievements = computed(() => {
   return achivmentsData.value.filter((achievement) =>
-    achievement.achievment_name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-})
-
-// Вычисляемый список с фильтрацией и сортировкой
-const filteredDepartmentData = computed(() => {
-  return departmentData.value.filter((department) =>
-    department.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    achievement.name.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
 
@@ -266,6 +253,7 @@ const handleFileUpload = (event) => {
       </form>
     </div>
 
+    <!-- Кнопки над таблицей -->
     <div class="grid grid-cols-3 mt-4 mx-4">
       <div
         class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
@@ -288,6 +276,8 @@ const handleFileUpload = (event) => {
         Добавить достижение
       </div>
     </div>
+    
+    <!-- Таблица -->
     <div class="p-2">
       <BaseTable :columnTemplates="tableSizeColumns">
         <TableRow :columnTemplates="tableSizeColumns">
@@ -314,14 +304,14 @@ const handleFileUpload = (event) => {
                   params: { ach_id: achievement.id, empl_id: teacherId }
                 }"
               >
-                {{ achievement.achievment_name }}
+                {{ achievement.name }}
               </router-link>
             </TableColumn>
             <TableColumn v-else>
-              {{ achievement.achievment_name }}
+              {{ achievement.name }}
             </TableColumn>
             <TableColumn>{{
-              achievement.score
+              achievement.total_score
             }}</TableColumn>
           </TableRow>
         </template>
