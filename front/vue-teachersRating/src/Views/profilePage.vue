@@ -716,7 +716,6 @@ const handleFileUpload = (event) => {
               class="mt-1 p-2 w-full border border-gray-300 rounded-md"
               rows="2"
               placeholder="Библиографическое описание..."
-              readonly
               v-model="inputed_bibliographic"
             ></textarea>
 
