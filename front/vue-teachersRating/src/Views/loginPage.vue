@@ -27,7 +27,6 @@ const login = (event) => {
       password: password.value
     })
     .then((response) => {
-      console.log(response.data)
       setLogin(response.data.token)
     })
     .catch((error) => {

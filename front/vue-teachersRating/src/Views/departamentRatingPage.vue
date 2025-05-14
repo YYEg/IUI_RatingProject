@@ -34,7 +34,7 @@ onMounted(async () => {
     return
   }
   try {
-    const response = await axios.get('http://127.0.0.1:8000/api/v1/department_ratings/')
+    const response = await axios.get('http://127.0.0.1:8000/api/v1/department_ranking/')
     departmentData.value = response.data
   } catch (error) {
     console.error('Ошибка загрузки данных кафедр:', error)
@@ -155,17 +155,17 @@ const sortedDepartmentData = computed(() => {
       <template #body>
         <TableRow
           v-for="(department, index) in sortedDepartmentData"
-          :key="department.id"
+          :key="department.department_id"
           :columnTemplates="tableSizeColumns"
         >
           <TableColumn>{{ index + 1 }}</TableColumn>
           <TableColumn class="cursor-pointer">
-            <router-link :to="{ name: 'departmentInsidePage', params: { id: department.id } }">
+            <router-link :to="{ name: 'departmentInsidePage', params: { id: department.department_id } }">
               {{ department.name }}
             </router-link>
           </TableColumn>
-          <TableColumn>{{ department.sum }}</TableColumn>
-          <TableColumn>{{ department.rating }}</TableColumn>
+          <TableColumn>{{ department.total_score }}</TableColumn>
+          <TableColumn>{{ department.rank }}</TableColumn>
         </TableRow>
       </template>
     </BaseTable>

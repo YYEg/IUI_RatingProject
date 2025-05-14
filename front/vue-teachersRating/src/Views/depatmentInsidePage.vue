@@ -14,7 +14,7 @@ const tableHeads = [
   { key: 'id', label: '№' },
   { key: 'fullName', label: 'ФИО' },
   { key: 'total_score', label: 'Сумма баллов' },
-  { key: 'rating', label: 'Рейтинг' }
+  { key: 'ranking', label: 'Рейтинг' } // Изменено с 'rating' на 'ranking'
 ]
 const tableSizeColumns = '1fr 8fr 3fr 3fr'
 const employeesData = ref([])
@@ -81,10 +81,6 @@ onMounted(async () => {
     return
   }
   try {
-    const employeeResponse = await axios.get(
-      `http://127.0.0.1:8000/api/v1/departments/${departmentId}/teachers/`
-    )
-    employeesData.value = employeeResponse.data
     const response_dep = await axios.get(
       `http://127.0.0.1:8000/api/v1/departments/${departmentId}/`
     )
@@ -92,7 +88,28 @@ onMounted(async () => {
   } catch (error) {
     console.log(error)
   }
-  console.log(departmentId)
+  canDisplayBlock.value =
+    role.value === 'ADMIN' ||
+    role.value === 'OTV' ||
+    (role.value === 'ZAV' &&
+      String(departmentId) === String(auth_user_department.value))
+})
+// Вытягиваю данные с бэка для сотрудников конкретного подразделения
+onMounted(async () => {
+  // Проверяем, есть ли токен
+  if (!token.value) {
+    // Если токена нет, перенаправляем на страницу авторизации
+    window.location.href = '/login'
+    return
+  }
+  try {
+    const employeeResponse = await axios.get(
+      `http://127.0.0.1:8000/api/v1/department_employee_ranking/${departmentId}/`
+    )
+    employeesData.value = employeeResponse.data
+  } catch (error) {
+    console.log(error)
+  }
 
   canDisplayBlock.value =
     role.value === 'ADMIN' ||
@@ -201,7 +218,7 @@ onMounted(async () => {
             </router-link>
           </TableColumn>
           <TableColumn>{{ employee.total_score }}</TableColumn>
-          <TableColumn>{{ index + 1 }}</TableColumn>
+          <TableColumn>{{ employee.ranking }}</TableColumn> <!-- Изменено с 'index + 1' на 'employee.ranking' -->
         </TableRow>
       </template>
     </BaseTable>

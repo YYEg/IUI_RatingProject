@@ -72,9 +72,8 @@ onMounted(async () => {
     return
   }
   try {
-    const employeeResponse = await axios.get('http://127.0.0.1:8000/api/v1/employees/')
+    const employeeResponse = await axios.get('http://127.0.0.1:8000/api/v1/employee_ranking/')
     employeesData.value = employeeResponse.data
-    console.log(employeesData.value)
   } catch (error) {
     console.log(error)
   }
@@ -164,17 +163,17 @@ onMounted(async () => {
       <template #body>
         <TableRow
           v-for="(employee, index) in sortedEmployees"
-          :key="employee.id"
+          :key="employee.employee_id"
           :columnTemplates="tableSizeColumns"
         >
           <TableColumn>{{ index + 1 }}</TableColumn>
           <TableColumn class="cursor-pointer">
-            <router-link :to="{ name: 'teachersInsidePage', params: { id: employee.id } }">
+            <router-link :to="{ name: 'teachersInsidePage', params: { id: employee.employee_id } }">
               {{ employee.surname }} {{ employee.name }} {{ employee.parentName }}
             </router-link>
           </TableColumn>
           <TableColumn>{{ employee.total_score }}</TableColumn>
-          <TableColumn>{{ employee.rating }}</TableColumn>
+          <TableColumn>{{ employee.rank }}</TableColumn>
         </TableRow>
       </template>
     </BaseTable>

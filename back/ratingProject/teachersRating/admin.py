@@ -3,11 +3,12 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 
-from .models import Employee, Department, Employee_Achievment, Achievment, User, Achievment_groups, Pub_Grief, Pub_Level, Pub_Type
+from .models import Employee, Department, Employee_Achievment_File, Employee_Achievment_Publication, Achievment, User, Achievment_groups, Pub_Grief, Pub_Level, Pub_Type
 
 admin.site.register(Employee)
 admin.site.register(Department)
-admin.site.register(Employee_Achievment)
+admin.site.register(Employee_Achievment_File)
+admin.site.register(Employee_Achievment_Publication)
 admin.site.register(Achievment)
 admin.site.register(Achievment_groups)
 admin.site.register(Pub_Type)

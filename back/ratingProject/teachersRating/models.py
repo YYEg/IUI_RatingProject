@@ -2,8 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class Employee(models.Model):
-    name = models.CharField(max_length=50)
     surname = models.CharField(max_length=50)
+    name = models.CharField(max_length=50)
     parentName = models.CharField(max_length=50)
     email = models.CharField(max_length=500, null=True)
     department = models.ForeignKey('Department', on_delete=models.PROTECT, null=False)
@@ -60,18 +60,29 @@ class Pub_Type(models.Model):
     def __str__(self):
         return self.name
 
-class Employee_Achievment(models.Model):
-    #Общая информация
+class Employee_Achievment_File(models.Model):
     employee = models.ForeignKey('Employee', on_delete=models.PROTECT, null=False)
     achievment = models.ForeignKey('Achievment', on_delete=models.PROTECT, null=False)
     meas_unit_val = models.CharField(max_length=50)
     score = models.FloatField(default=0.0)
     full_achivment_name = models.CharField(max_length=1000)
-    # Подтверждающий документ
+    reciving_date = models.DateField(null=True)
+    active = models.BooleanField(default=True)
     verif_doc = models.FileField(upload_to='verification_documents/', blank=True, null=True)
     verif_link = models.CharField(max_length=2000, null=True)
-    #Поля для статьи
-    pub_type =  models.ForeignKey('Pub_Type', on_delete=models.PROTECT, null=True, blank=True)
+
+    def __str__(self):
+        return self.full_achivment_name
+
+class Employee_Achievment_Publication(models.Model):
+    employee = models.ForeignKey('Employee', on_delete=models.PROTECT, null=False)
+    achievment = models.ForeignKey('Achievment', on_delete=models.PROTECT, null=False)
+    meas_unit_val = models.CharField(max_length=50)
+    score = models.FloatField(default=0.0)
+    full_achivment_name = models.CharField(max_length=1000)
+    reciving_date = models.DateField(null=True)
+    active = models.BooleanField(default=True)
+    pub_type = models.ForeignKey('Pub_Type', on_delete=models.PROTECT, null=True, blank=True)
     pub_grief = models.ForeignKey('Pub_Grief', on_delete=models.PROTECT, null=True, blank=True)
     pub_level = models.ForeignKey('Pub_Level', on_delete=models.PROTECT, null=True, blank=True)
     pub_language = models.CharField(max_length=50, null=True, blank=True)
@@ -88,10 +99,10 @@ class Employee_Achievment(models.Model):
     publicator = models.CharField(max_length=200, null=True, blank=True)
     publication_data = models.DateField(null=True)
     publication_year_vol_num = models.CharField(max_length=200, null=True, blank=True)
-    #Дополнительная общая информация
-    reciving_date = models.DateField(null=True)
-    active = models.BooleanField(default=True)
+
     def __str__(self):
         return self.full_achivment_name
+
+
 
     

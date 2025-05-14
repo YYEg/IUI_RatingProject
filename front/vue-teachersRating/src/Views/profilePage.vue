@@ -111,24 +111,25 @@ const getUserData = async () => {
     userDepatment.value = userData.value.department
 
     const achievementsResponse = await axios.get(
-      `http://127.0.0.1:8000/api/v1/employe_achievments/employee/${teacherId.value}`
+      `http://127.0.0.1:8000/api/v1/employee_achievements/${teacherId.value}`
     )
     // Сортируем данные по полю number по возрастанию
-    achivmentsData.value = achievementsResponse.data.achievements.sort(
-      (a, b) => a.number - b.number
-    )
-
-    const AllAchResp = await axios.get('http://127.0.0.1:8000/api/v1/achievments/')
+    // achivmentsData.value = achievementsResponse.data.achievements.sort(
+    //   (a, b) => a.number - b.number
+    // )
+    achivmentsData.value = achievementsResponse.data
+    console.log(achivmentsData.value)
+    const AllAchResp = await axios.get('http://127.0.0.1:8000/api/v1/achievements/')
     allAchData.value = AllAchResp.data.filter((item) => item.meas_unit_score !== 0)
   } catch (error) {
-    console.error('Error fetching user data:', error)
+    console.error('Ошибка получения данных пользователя:', error)
   }
 }
 
-const addAchievement = async () => {
+const addAchievementFile = async () => {
   try {
     const oneAch = await axios.get(
-      `http://127.0.0.1:8000/api/v1/achievments/${selectedAchievement.value}`
+      `http://127.0.0.1:8000/api/v1/achievements/${selectedAchievement.value}`
     )
     const data = new FormData()
     data.append('employee', userData.value.employee)
@@ -139,38 +140,39 @@ const addAchievement = async () => {
     data.append('full_achivment_name', inputed_name.value)
     data.append('score', inputed_meas_unit_val.value * oneAch.data.meas_unit_score)
     data.append('reciving_date', new Date().toISOString().split('T')[0])
-    // Внешние ключи
-    data.append('pub_type', selectedPubType.value)
-    data.append('pub_grief', selectedPubGrief.value)
-    data.append('pub_level', selectedPubLevel.value)
-    //остальные поля
-    data.append('language_pub', inputed_language_pub.value)
-    data.append('doi', inputed_doi.value)
-    data.append('empl_authors', inputed_empl_authors.value)
-    data.append('stud_authors', inputed_stud_authors.value)
-    data.append('out_authors', inputed_out_authors.value)
-    data.append('bibliographic', inputed_bibliographic.value)
-    data.append('publication_name', inputed_publication_name.value)
-    data.append('publicator', inputed_publicator.value)
-    // Добавляем publication_date только если она не пустая
-    if (inputed_publication_date.value) {
-      data.append(
-        'publication_date',
-        new Date(inputed_publication_date.value).toISOString().split('T')[0]
-      )
-    }
-    data.append('yearVolNum', inputed_yearVolNum.value)
-    data.append('conference_status', inputed_conference_status.value)
-    // Добавляем conference_date только если она не пустая
-    if (inputed_conference_date.value) {
-      data.append(
-        'conference_date',
-        new Date(inputed_conference_date.value).toISOString().split('T')[0]
-      )
-    }
-    data.append('conference_name', inputed_conference_name.value)
+    console.log(data)
+    // // Внешние ключи
+    // data.append('pub_type', selectedPubType.value)
+    // data.append('pub_grief', selectedPubGrief.value)
+    // data.append('pub_level', selectedPubLevel.value)
+    // //остальные поля
+    // data.append('language_pub', inputed_language_pub.value)
+    // data.append('doi', inputed_doi.value)
+    // data.append('empl_authors', inputed_empl_authors.value)
+    // data.append('stud_authors', inputed_stud_authors.value)
+    // data.append('out_authors', inputed_out_authors.value)
+    // data.append('bibliographic', inputed_bibliographic.value)
+    // data.append('publication_name', inputed_publication_name.value)
+    // data.append('publicator', inputed_publicator.value)
+    // // Добавляем publication_date только если она не пустая
+    // if (inputed_publication_date.value) {
+    //   data.append(
+    //     'publication_date',
+    //     new Date(inputed_publication_date.value).toISOString().split('T')[0]
+    //   )
+    // }
+    // data.append('yearVolNum', inputed_yearVolNum.value)
+    // data.append('conference_status', inputed_conference_status.value)
+    // // Добавляем conference_date только если она не пустая
+    // if (inputed_conference_date.value) {
+    //   data.append(
+    //     'conference_date',
+    //     new Date(inputed_conference_date.value).toISOString().split('T')[0]
+    //   )
+    // }
+    // data.append('conference_name', inputed_conference_name.value)
 
-    const response = await axios.post('http://127.0.0.1:8000/api/v1/employee_achievment/', data, {
+    const response = await axios.post('http://127.0.0.1:8000/api/v1/add_achievement_file/', data, {
       headers: {
         Authorization: `Token ${token.value}`,
         'Content-Type': 'multipart/form-data' // Указываем, что отправляем FormData
@@ -178,7 +180,7 @@ const addAchievement = async () => {
     })
 
     getUserData()
-    console.log('Achievement added successfully:', response.data)
+    console.log('Достижение успешно добавлено:', response.data)
 
     selectedAchievement.value = null
 
@@ -315,14 +317,7 @@ const downloadReport = async () => {
 
 const filteredAchievements = computed(() => {
   return achivmentsData.value.filter((achievement) =>
-    achievement.achievment_name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-})
-
-// Вычисляемый список с фильтрацией и сортировкой
-const filteredDepartmentData = computed(() => {
-  return departmentData.value.filter((department) =>
-    department.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    achievement.name.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
 
@@ -475,16 +470,16 @@ const handleFileUpload = (event) => {
               <router-link
                 :to="{
                   name: 'achievmentDetailed',
-                  params: { ach_id: achievement.id, empl_id: teacherId }
+                  params: { ach_id: achievement.id, empl_id: teacherId}
                 }"
               >
-                {{ achievement.achievment_name }}
+                {{ achievement.name }}
               </router-link>
             </TableColumn>
             <TableColumn v-else>
-              {{ achievement.achievment_name }}
+              {{ achievement.name }}
             </TableColumn>
-            <TableColumn>{{ achievement.score }}</TableColumn>
+            <TableColumn>{{ achievement.total_score }}</TableColumn>
           </TableRow>
         </template>
       </BaseTable>
@@ -761,7 +756,7 @@ const handleFileUpload = (event) => {
 
           <div
             class="w-full mt-2 shadow-2xl text-center text-xl transition hover:scale-105 cursor-pointer p-2 rounded-2xl border-2 border-black"
-            @click="addAchievement()"
+            @click="addAchievementFile()"
           >
             Добавить
           </div>

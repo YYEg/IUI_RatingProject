@@ -9,6 +9,7 @@ import { useRoute } from 'vue-router'
 
 const emplAch = ref([])
 const JustAch = ref([])
+const topAch = ref([])
 const selectedAchievement = ref(null)
 const achivmentsData = ref([])
 const isDeleting = ref(false)
@@ -141,11 +142,14 @@ const fetchPubLevels = async (griefId) => {
 const getUserData = async () => {
   try {
     console.log(route.params.ach_id)
-    const achievementsResponse = await axios.get(
-      `http://127.0.0.1:8000/api/employee/${route.params.empl_id}/achievement/${route.params.ach_id}/achievements/`
+    const oneAchResp = await axios.get(
+      `http://127.0.0.1:8000/api/v1/achievements/${route.params.ach_id}/`
     )
-    console.log(currentUser.value, route.params.empl_id)
-    achivmentsData.value = achievementsResponse.data.achievements
+    topAch.value = oneAchResp.data
+    const achievementsResponse = await axios.get(
+      `http://127.0.0.1:8000/api/v1/employees/${route.params.empl_id}/achievements/${topAch.value.is_pub}/${route.params.ach_id}/`
+    )
+    achivmentsData.value = achievementsResponse.data
     console.log(achivmentsData.value)
   } catch (error) {
     console.error('Проблема с получением данных пользователя:', error)
@@ -245,9 +249,10 @@ onMounted(async () => {
 })
 
 const filteredAchievements = computed(() => {
-  return achivmentsData.value.filter((achievement) =>
-    achievement.achievment_name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
+  return achivmentsData.value.filter((achievement) => {
+    const name = achievement.full_achivment_name; // Убедитесь, что значение определено
+    return name.toLowerCase().includes(searchQuery.value.toLowerCase());
+  });
 })
 
 const sortTable = (column) => {
@@ -519,7 +524,7 @@ const saveAchievement = async () => {
           >
             <TableColumn>{{ index + 1 }}</TableColumn>
             <TableColumn class="cursor-pointer">
-              {{ achievement.full_name }}
+              {{ achievement.full_achivment_name }}
             </TableColumn>
             <TableColumn>{{ achievement.score }}</TableColumn>
             <TableColumn>
