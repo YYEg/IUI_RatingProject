@@ -94,8 +94,10 @@ const setLogin = (token) => {
               >
                 Войти
               </button>
+              <div class="underline mt-4 text-gray-500">Отправить заявку на восстановление пароля</div>
             </form>
           </div>
+          
         </div>
       </div>
     </div>

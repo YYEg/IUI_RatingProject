@@ -38,7 +38,7 @@ urlpatterns = [
      path('api/v1/pub_types/', PubTypeApiView.as_view(), name='pub_types'),
      path('api/v1/pub_griefs/', PubGriefApiView.as_view(), name='pub_griefs'),
      path('api/v1/pub_levels/', PubLevelApiView.as_view(), name='pub_levels'),
-     # Маршрут для UpdateAPIView (PUT)
-    path('employee_achievments/update/<int:id>/', EmployeeAchievementUpdateView.as_view(), name='employee_achievment-update'),
-    path('api/v1/update_message/<int:achievement_id>/', UpdateMessage.as_view(), name='update_message_employee_achievement'),
+     
+     path('employee_achievments/update/<int:id>/', EmployeeAchievementUpdateView.as_view(), name='employee_achievment-update'),
+     path('api/v1/update_message/<int:achievement_id>/', UpdateMessage.as_view(), name='update_message_employee_achievement'),
 ]
