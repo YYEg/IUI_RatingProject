@@ -379,7 +379,7 @@ const sortedAchievements = computed(() => {
 })
 
 const totalScore = computed(() => {
-  return sortedAchievements.value.reduce((sum, achievement) => sum + achievement.score, 0)
+  return sortedAchievements.value.reduce((sum, achievement) => sum + achievement.total_score, 0)
 })
 
 const onAchievementChange = async () => {
