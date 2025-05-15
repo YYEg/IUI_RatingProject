@@ -15,25 +15,8 @@ import yagmail
 from django.http import FileResponse
 import requests
 from django.http import JsonResponse
-from django.db.models import Sum
-from django.db.models.functions import Rank
-from django.db.models import Window
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from .models import Department, Employee_Achievment_File, Employee_Achievment_Publication
 from django.db.models import Q
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .models import Employee_Achievment_File, Employee, Achievment
-from .serializers import Employee_Achievment_FileSerializer
-from django.shortcuts import get_object_or_404
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework import generics
-from .models import Achievment
-from .serializers import AchievmentSerializer
-from rest_framework import generics
 
 #Все достижения, кроме тех, где meas_unit_score равен 0
 class AchievementsListView(generics.ListAPIView):
@@ -49,7 +32,7 @@ class OneDepartmentView(generics.RetrieveAPIView):
     serializer_class = DepartmentSerializer
     lookup_field = 'id'
 
-# Одно подразделение
+# Один сотрудник
 class OneEmployeeView(generics.RetrieveAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
@@ -237,7 +220,8 @@ class EmployeeAchievementsByFlagView(APIView):
         ]
 
         return Response(achievement_data)
-# Добавление достижения с файлом себе(сотруднику)
+
+# Добавление достижения с файлом сотруднику
 class AddAchievementFileView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
