@@ -7,9 +7,6 @@ from teachersRating.views import Logout, PubGriefApiView, PubLevelApiView, PubTy
         AddAchievementFileView, AchievementsListView, OneAchievmentApiView, EmployeeAchievementsByFlagView, OneEmployeeView, \
             AddAchievementPublicationView, UpdateMessage, DeleteAchievementView, EditAchievementView, AchievementDetailView, GenearatePersonalReportApiView;
 
-
-
-
 urlpatterns = [
     # Аутентификация и профиль
     path('admin/', admin.site.urls),
@@ -45,7 +42,7 @@ urlpatterns = [
 
     # Уведомление
     path('api/v1/update_message/<int:achievement_id>/<str:is_pub>/', UpdateMessage.as_view(), name='update_message'),
-    
+
     # Генерация отчетов 
     path('api/v1/generate_personal_report/', GenearatePersonalReportApiView.as_view(), name='generate_report'),
     #path('api/v1/generate_report/', generate_report, name='generate_report'),
