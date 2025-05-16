@@ -7,7 +7,6 @@ import { computed, onMounted, ref, reactive, watch } from 'vue'
 import axios from 'axios'
 import { useRoute } from 'vue-router'
 
-
 const route = useRoute()
 const achivmentsData = ref([])
 const allAchData = ref([])
@@ -54,7 +53,6 @@ const isPub = ref('')
 const hasPublication = ref(false)
 const hasConference = ref(false)
 
-
 // Шапка и размеры таблицы
 const tableHeads = [
   { key: 'id', label: '№' },
@@ -98,10 +96,9 @@ const fetchPubLevels = async (griefId) => {
 // Получение данных пользователя
 const getUserData = async () => {
   try {
-    
     teacherId.value = route.params.id
     role.value = localStorage.role
-    
+
     const achievementsResponse = await axios.get(
       `http://127.0.0.1:8000/api/v1/employee_achievements/${teacherId.value}`
     )
@@ -152,7 +149,6 @@ const addAchievementFile = async () => {
     inputed_name.value = ''
     inputed_ver_link.value = ''
     inputed_doc_ver_link.value = null // Для файла лучше использовать null
-
   } catch (error) {
     console.error('Ошибка при добавлении достижения:', error)
     errorMessage.value = 'Ошибка при добавлении достижения!'
@@ -178,28 +174,27 @@ const addAchievementPublication = async () => {
     data.append('full_achivment_name', inputed_name.value)
     data.append('score', inputed_meas_unit_val.value * oneAch.data.meas_unit_score)
     data.append('reciving_date', new Date().toISOString().split('T')[0])
-    console.log(data)
     // Внешние ключи
     data.append('pub_type', selectedPubType.value)
     data.append('pub_grief', selectedPubGrief.value)
     data.append('pub_level', selectedPubLevel.value)
     //остальные поля
-    data.append('language_pub', inputed_language_pub.value)
-    data.append('doi', inputed_doi.value)
-    data.append('empl_authors', inputed_empl_authors.value)
-    data.append('stud_authors', inputed_stud_authors.value)
-    data.append('out_authors', inputed_out_authors.value)
-    data.append('bibliographic', inputed_bibliographic.value)
+    data.append('pub_language', inputed_language_pub.value)
+    data.append('pub_doi', inputed_doi.value)
+    data.append('pub_authors_employees', inputed_empl_authors.value)
+    data.append('pub_authors_students', inputed_stud_authors.value)
+    data.append('pub_out_authors', inputed_out_authors.value)
+    data.append('bibliographic_desc', inputed_bibliographic.value)
     data.append('publication_name', inputed_publication_name.value)
     data.append('publicator', inputed_publicator.value)
     // Добавляем publication_date только если она не пустая
     if (inputed_publication_date.value) {
       data.append(
-        'publication_date',
+        'publication_data',
         new Date(inputed_publication_date.value).toISOString().split('T')[0]
       )
     }
-    data.append('yearVolNum', inputed_yearVolNum.value)
+    data.append('publication_year_vol_num', inputed_yearVolNum.value)
     data.append('conference_status', inputed_conference_status.value)
     console.log(data)
     // Добавляем conference_date только если она не пустая
@@ -210,12 +205,16 @@ const addAchievementPublication = async () => {
       )
     }
     data.append('conference_name', inputed_conference_name.value)
-    const response = await axios.post('http://127.0.0.1:8000/api/v1/add_achievement_publication/', data, {
-      headers: {
-        Authorization: `Token ${token.value}`,
-        'Content-Type': 'multipart/form-data' // Указываем, что отправляем FormData
+    const response = await axios.post(
+      'http://127.0.0.1:8000/api/v1/add_achievement_publication/',
+      data,
+      {
+        headers: {
+          Authorization: `Token ${token.value}`,
+          'Content-Type': 'multipart/form-data' // Указываем, что отправляем FormData
+        }
       }
-    })
+    )
 
     getUserData()
     console.log('Достижение успешно добавлено:', response.data)
@@ -471,7 +470,7 @@ const handleFileUpload = (event) => {
         Добавить достижение
       </div>
     </div>
-    
+
     <!-- Таблица -->
     <div class="p-2">
       <BaseTable :columnTemplates="tableSizeColumns">
@@ -505,17 +504,15 @@ const handleFileUpload = (event) => {
             <TableColumn v-else>
               {{ achievement.name }}
             </TableColumn>
-            <TableColumn>{{
-              achievement.total_score
-            }}</TableColumn>
+            <TableColumn>{{ achievement.total_score }}</TableColumn>
           </TableRow>
         </template>
       </BaseTable>
 
       <div class="text-center text-2xl font-bold mt-4">Итого баллов: {{ totalScore }}</div>
 
-<!-- Модальное окно -->
-<div
+      <!-- Модальное окно -->
+      <div
         v-if="isModalOpen"
         class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50"
       >
@@ -801,13 +798,15 @@ const handleFileUpload = (event) => {
             </div>
           </div>
 
-          <div v-if="!isPub"
+          <div
+            v-if="!isPub"
             class="w-full mt-2 shadow-2xl text-center text-xl transition hover:scale-105 cursor-pointer p-2 rounded-2xl border-2 border-black"
             @click="addAchievementFile()"
           >
             Добавить
           </div>
-          <div v-else
+          <div
+            v-else
             class="w-full mt-2 shadow-2xl text-center text-xl transition hover:scale-105 cursor-pointer p-2 rounded-2xl border-2 border-black"
             @click="addAchievementPublication()"
           >

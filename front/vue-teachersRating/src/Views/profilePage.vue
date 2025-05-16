@@ -176,6 +176,7 @@ const addAchievementPublication = async () => {
       `http://127.0.0.1:8000/api/v1/achievements/${selectedAchievement.value}`
     )
     const data = new FormData()
+    console.log(oneAch.data)
     data.append('employee', userData.value.employee)
     data.append('achievment', selectedAchievement.value)
     data.append('meas_unit_val', inputed_meas_unit_val.value)
@@ -190,22 +191,22 @@ const addAchievementPublication = async () => {
     data.append('pub_grief', selectedPubGrief.value)
     data.append('pub_level', selectedPubLevel.value)
     //остальные поля
-    data.append('language_pub', inputed_language_pub.value)
-    data.append('doi', inputed_doi.value)
-    data.append('empl_authors', inputed_empl_authors.value)
-    data.append('stud_authors', inputed_stud_authors.value)
-    data.append('out_authors', inputed_out_authors.value)
-    data.append('bibliographic', inputed_bibliographic.value)
+    data.append('pub_language', inputed_language_pub.value)
+    data.append('pub_doi', inputed_doi.value)
+    data.append('pub_authors_employees', inputed_empl_authors.value)
+    data.append('pub_authors_students', inputed_stud_authors.value)
+    data.append('pub_out_authors', inputed_out_authors.value)
+    data.append('bibliographic_desc', inputed_bibliographic.value)
     data.append('publication_name', inputed_publication_name.value)
     data.append('publicator', inputed_publicator.value)
     // Добавляем publication_date только если она не пустая
     if (inputed_publication_date.value) {
       data.append(
-        'publication_date',
+        'publication_data',
         new Date(inputed_publication_date.value).toISOString().split('T')[0]
       )
     }
-    data.append('yearVolNum', inputed_yearVolNum.value)
+    data.append('publication_year_vol_num', inputed_yearVolNum.value)
     data.append('conference_status', inputed_conference_status.value)
     console.log(data)
     // Добавляем conference_date только если она не пустая

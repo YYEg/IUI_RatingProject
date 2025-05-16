@@ -17,6 +17,8 @@ import requests
 from django.http import JsonResponse
 from django.db.models import Q
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.views import APIView
+from datetime import datetime
 
 #Все достижения, кроме тех, где meas_unit_score равен 0
 class AchievementsListView(generics.ListAPIView):
@@ -258,3 +260,112 @@ class AddAchievementPublicationView(APIView):
             serializer.save(employee=employee, achievment=achievment)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Уведомление на почту сотруднику
+class UpdateMessage(APIView):
+
+    def get(self, request, achievement_id, is_pub):
+        # Проверяем, находится ли достижение в нужной таблице
+        if is_pub == 'true':
+            achievement = Employee_Achievment_Publication.objects.filter(id=achievement_id).first()
+        else:
+            achievement = Employee_Achievment_File.objects.filter(id=achievement_id).first()
+        
+        if not achievement:
+            return Response({'error': 'Достижение не найдено'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Получаем email и причину из query-параметров
+        email = request.query_params.get('email')
+        reason = request.query_params.get('reason')
+
+        if email:
+            yag = yagmail.SMTP('rezervdesu15@gmail.com', 'ddvd jduu prdi ktih')
+            yag.send(
+                email,
+                f"Вам необходимо обновить достижения {achievement.full_achivment_name}", 
+                f"Достижение {achievement.full_achivment_name} нуждается в редактировании\nЧто необходимо отредактировать: {reason}"
+            )
+
+        return Response({'message': 'Уведомление отправлено!'}, status=status.HTTP_200_OK)
+
+# Удаление достижения сотрудника    
+class DeleteAchievementView(APIView):
+    def delete(self, request, achievement_id, is_pub):
+        # Проверяем, находится ли достижение в нужной таблице
+        if is_pub == 'true':
+            achievement = Employee_Achievment_Publication.objects.filter(id=achievement_id).first()
+        else:
+            achievement = Employee_Achievment_File.objects.filter(id=achievement_id).first()
+        
+        if not achievement:
+            return Response({'error': 'Достижение не найдено'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Получаем email из тела запроса
+        email = request.data.get('email')
+        reason = request.data.get('reason')
+
+        if email:
+            # Отправка сообщения об удалении
+            yag = yagmail.SMTP('rezervdesu15@gmail.com', 'ddvd jduu prdi ktih')
+            yag.send(
+                email,
+                f"Удаление достижения {achievement.full_achivment_name}", 
+                f"Достижение {achievement.full_achivment_name} было удалено ввиду его некорректности, исправьте ошибки и внесите корректное достижение\nПричина удаления: {reason}"
+            )
+
+        # Удаляем достижение
+        achievement.delete()
+
+        return Response({'message': 'Достижение удалено!'}, status=status.HTTP_204_NO_CONTENT)
+
+# Редактирование достижений
+class EditAchievementView(APIView):
+    def put(self, request, achievement_id, is_pub):
+        # Проверяем, находится ли достижение в нужной таблице
+        if is_pub == 'true':
+            achievement = Employee_Achievment_Publication.objects.filter(id=achievement_id).first()
+        else:
+            achievement = Employee_Achievment_File.objects.filter(id=achievement_id).first()
+        
+        if not achievement:
+            return Response({'error': 'Достижение не найдено'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Используем текущее значение employee из объекта achievement
+        employee = achievement.employee
+
+        # Проверка формата даты
+        conference_date = request.data.get('conference_date')
+        publication_data = request.data.get('publication_data')
+        try:
+            if conference_date:
+                datetime.strptime(conference_date, '%Y-%m-%d')
+            if publication_data:
+                datetime.strptime(publication_data, '%Y-%m-%d')
+        except ValueError:
+            return Response({'error': 'Неправильный формат date. Используйте один из этих форматов: YYYY-MM-DD.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Обновляем данные достижения
+        serializer = Employee_Achievment_FileSerializer(achievement, data=request.data) if isinstance(achievement, Employee_Achievment_File) else Employee_Achievment_PublicationSerializer(achievement, data=request.data)
+        
+        if serializer.is_valid():
+            serializer.save(employee=employee)  # Передаем employee в save
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Получение информации о достижении
+class AchievementDetailView(APIView):
+    def get(self, request, achievement_id, is_pub):
+        # Проверяем, находится ли достижение в нужной таблице
+        if is_pub == 'true':
+            achievement = Employee_Achievment_Publication.objects.filter(id=achievement_id).first()
+        else:
+            achievement = Employee_Achievment_File.objects.filter(id=achievement_id).first()
+        
+        if not achievement:
+            return Response({'error': 'Достижение не найдено'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Выбираем соответствующий сериализатор
+        serializer = Employee_Achievment_FileSerializer(achievement) if isinstance(achievement, Employee_Achievment_File) else Employee_Achievment_PublicationSerializer(achievement)
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)

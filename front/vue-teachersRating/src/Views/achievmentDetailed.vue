@@ -150,7 +150,6 @@ const getUserData = async () => {
       `http://127.0.0.1:8000/api/v1/employees/${route.params.empl_id}/achievements/${topAch.value.is_pub}/${route.params.ach_id}/`
     )
     achivmentsData.value = achievementsResponse.data
-    console.log(achivmentsData.value)
   } catch (error) {
     console.error('Проблема с получением данных пользователя:', error)
   }
@@ -180,7 +179,7 @@ const deleteAchievement = async () => {
   isDeleting.value = true
   try {
     const response = await axios.delete(
-      `http://127.0.0.1:8000/api/v1/delete_employee_achievement/${selectedAchievementId.value}/`,
+      `http://127.0.0.1:8000/api/v1/delete_achievement/${selectedAchievementId.value}/${topAch.value.is_pub}/`,
       {
         headers: { Authorization: `Token ${token.value}` },
         data: { email: employeeData.value.email, reason: DelReason.value } // Добавляем email и причину удаления в тело запроса
@@ -193,9 +192,9 @@ const deleteAchievement = async () => {
     try {
       // Обновляем список достижений после удаления
       const achievementsResponse = await axios.get(
-        `http://127.0.0.1:8000/api/employee/${route.params.empl_id}/achievement/${route.params.ach_id}/achievements/`
+        `http://127.0.0.1:8000/api/v1/employees/${route.params.empl_id}/achievements/${topAch.value.is_pub}/${route.params.ach_id}/`
       )
-      achivmentsData.value = achievementsResponse.data.achievements
+      achivmentsData.value = achievementsResponse.data
     } catch (error) {
       achivmentsData.value = []
     }
@@ -212,23 +211,21 @@ const sendUpdateMessage = async () => {
   try {
     console.log(employeeData.value.email)
     const response = await axios.get(
-      `http://127.0.0.1:8000/api/v1/update_message/${selectedAchievementId.value}/`,
+      `http://127.0.0.1:8000/api/v1/update_message/${selectedAchievementId.value}/${topAch.value.is_pub}`,
       {
         headers: { Authorization: `Token ${token.value}` },
         params: { email: employeeData.value.email, reason: DelReason.value } // Передаем параметры в URL
       }
     )
-
+    console.log(employeeData.value.email)
     console.log('Сообщение отправлено:', response.data)
   } catch (error) {
-    console.error('Ошибка удаления достижения:', error)
+    console.error('Ошибка отправки уведомления:', error)
   } finally {
     isSending.value = false
     closeMessageModal()
   }
 }
-
-
 
 onMounted(async () => {
   if (!token.value) {
@@ -241,6 +238,7 @@ onMounted(async () => {
       `http://127.0.0.1:8000/api/v1/employees/${route.params.empl_id}/`
     )
     employeeData.value = employeeResponse.data
+    console.log(employeeData.value)
   } catch (error) {
     console.error('Данные сотрудника получить не удалось:', error)
   }
@@ -317,9 +315,9 @@ const downloadDocument = async (achievementRecordId) => {
 const editAchievement = async (achievementId) => {
   try {
     // Получаем данные достижения по ID
-    const response = await axios.get(`http://127.0.0.1:8000/employee_achievments/${achievementId}/`)
+    console.log(topAch.value.is_pub)
+    const response = await axios.get(`http://127.0.0.1:8000/api/v1/achievement/${achievementId}/${topAch.value.is_pub}`)
     emplAch.value = response.data
-
     // Заполняем поля модального окна
     selectedAchievement.value = emplAch.value.id
     inputed_meas_unit_val.value = emplAch.value.meas_unit_val
@@ -346,7 +344,7 @@ const editAchievement = async (achievementId) => {
     inputed_conference_name.value = emplAch.value.conference_name
     console.log(emplAch.value)
     const achAch = await axios.get(
-      `http://127.0.0.1:8000/api/v1/achievments/${emplAch.value.achievment}`
+      `http://127.0.0.1:8000/api/v1/achievements/${emplAch.value.achievment}`
     )
     JustAch.value = achAch.data
     // Подгружаем дополнительные данные, такие как isPub
@@ -370,36 +368,51 @@ const editAchievement = async (achievementId) => {
 const saveAchievement = async () => {
   try {
     const data = new FormData()
-    data.append('achievment', selectedAchievement.value)
+    data.append('achievment', currentAchievementId.value)
+    data.append('employee', emplAch.value.employee) 
     data.append('meas_unit_val', inputed_meas_unit_val.value)
     data.append('verif_link', inputed_ver_link.value)
     data.append('full_achivment_name', inputed_name.value)
     data.append('pub_type', selectedPubType.value)
     data.append('pub_grief', selectedPubGrief.value)
     data.append('pub_level', selectedPubLevel.value)
-    data.append('language_pub', inputed_language_pub.value)
-    data.append('doi', inputed_doi.value)
-    data.append('empl_authors', inputed_empl_authors.value)
-    data.append('stud_authors', inputed_stud_authors.value)
-    data.append('out_authors', inputed_out_authors.value)
-    data.append('bibliographic', inputed_bibliographic.value)
+    data.append('pub_language', inputed_language_pub.value)
+    data.append('pub_doi', inputed_doi.value)
+    data.append('pub_authors_employees', inputed_empl_authors.value)
+    data.append('pub_authors_students', inputed_stud_authors.value)
+    data.append('pub_out_authors', inputed_out_authors.value)
+    data.append('bibliographic_desc', inputed_bibliographic.value)
     data.append('publication_name', inputed_publication_name.value)
     data.append('publicator', inputed_publicator.value)
-    data.append('publication_date', inputed_publication_date.value)
-    data.append('yearVolNum', inputed_yearVolNum.value)
+    
+    // Преобразование даты в формат YYYY-MM-DD, если значение не пустое
+    let formattedPublicationDate = '';
+    let formattedConferenceDate = '';
+    
+    if (inputed_publication_date.value) {
+        formattedPublicationDate = new Date(inputed_publication_date.value).toISOString().split('T')[0];
+    }
+    
+    if (inputed_conference_date.value) {
+        formattedConferenceDate = new Date(inputed_conference_date.value).toISOString().split('T')[0];
+    }
+    
+    data.append('publication_data', formattedPublicationDate);
+    data.append('conference_date', formattedConferenceDate);
+    data.append('publication_year_vol_num', inputed_yearVolNum.value)
     data.append('conference_status', inputed_conference_status.value)
-    data.append('conference_date', inputed_conference_date.value)
+    data.append('conference_date', formattedConferenceDate)
     data.append('conference_name', inputed_conference_name.value)
 
     if (inputed_doc_ver_link.value) {
       data.append('verif_doc', inputed_doc_ver_link.value)
     }
-
+    
     let response
     if (currentAchievementId.value) {
       // Если есть ID, отправляем PUT-запрос на обновление
       response = await axios.put(
-        `http://127.0.0.1:8000/employee_achievments/update/${selectedAchievement.value}/`,
+        `http://127.0.0.1:8000/api/v1/edit_achievement/${selectedAchievement.value}/${topAch.value.is_pub}/`,
         data,
         {
           headers: {
@@ -563,6 +576,7 @@ const saveAchievement = async () => {
                   alt="Логотип"
                   style="cursor: pointer; width: 24px; height: 24px"
                 />
+                {{ achievement.id }} {{ achievement.full_achivment_name }}
               </div>
             </TableColumn>
           </TableRow>
