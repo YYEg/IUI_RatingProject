@@ -47,10 +47,16 @@ def generate_personal_report(request):
         print("Achievements:", achievements)  # Отладочный вывод
 
         # Получаем достижения сотрудника с teacher_id
-        employee_achievements = Employee_Achievment_File.objects.filter(employee_id=teacher_id).values(
+        # Получаем достижения сотрудника с teacher_id из обеих таблиц
+        employee_achievements_file = Employee_Achievment_File.objects.filter(employee_id=teacher_id).values(
             'id', 'achievment_id', 'full_achivment_name', 'meas_unit_val', 'score'
         )
-        employee_achievements = list(employee_achievements)
+        employee_achievements_publication = Employee_Achievment_Publication.objects.filter(employee_id=teacher_id).values(
+            'id', 'achievment_id', 'full_achivment_name', 'meas_unit_val', 'score'
+        )
+        
+        # Объединяем достижения из обеих таблиц
+        employee_achievements = list(employee_achievements_file) + list(employee_achievements_publication)
         print("Employee Achievements:", employee_achievements)  # Отладочный вывод
 
         # Создаем словарь для суммирования баллов по каждому достижению

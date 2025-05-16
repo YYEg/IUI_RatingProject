@@ -369,3 +369,9 @@ class AchievementDetailView(APIView):
         serializer = Employee_Achievment_FileSerializer(achievement) if isinstance(achievement, Employee_Achievment_File) else Employee_Achievment_PublicationSerializer(achievement)
         
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+# Скачивание отчета по сотруднику
+class GenearatePersonalReportApiView(APIView):
+    def get(self, request, *args, **kwargs):
+        response = generate_personal_report(request)
+        return response
