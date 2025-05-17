@@ -14,8 +14,3 @@
 
 #         # Отправляем файл пользователю
 #         return FileResponse(open(document_path, 'rb'), as_attachment=True, filename=document_name)
-
-# class GenearatePersonalReportApiView(APIView):
-#     def get(self, request, *args, **kwargs):
-#         response = generate_personal_report(request)
-#         return response
