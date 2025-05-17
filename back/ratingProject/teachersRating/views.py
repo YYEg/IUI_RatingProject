@@ -43,9 +43,9 @@ class OneEmployeeView(generics.RetrieveAPIView):
 # Рейтинг подразделений
 class DepartmentRankingView(APIView):
     def get(self, request):
-        # Подсчет суммы баллов для каждого подразделения из двух таблиц достижений
         department_scores = Department.objects.annotate(
-            total_score=Sum('employee__employee_achievment_file__score', default=0) + Sum('employee__employee_achievment_publication__score', default=0)
+            total_score=Sum('employee__employee_achievment_file__score', filter=Q(employee__employee_achievment_file__active=True), default=0) +
+                        Sum('employee__employee_achievment_publication__score', filter=Q(employee__employee_achievment_publication__active=True), default=0),
         ).annotate(
             rank=Window(
                 expression=Rank(),
@@ -53,7 +53,6 @@ class DepartmentRankingView(APIView):
             )
         ).order_by('-total_score')
 
-        # Формирование выходного JSON
         result = [
             {
                 'department_id': department.id,
@@ -69,9 +68,10 @@ class DepartmentRankingView(APIView):
 # Рейтинга сотурдников
 class EmployeeRankingView(APIView):
     def get(self, request):
-        # Подсчет суммы баллов для каждого сотрудника из двух таблиц достижений
         employee_scores = Employee.objects.annotate(
-            total_score=Sum('employee_achievment_file__score', default=0) + Sum('employee_achievment_publication__score', default=0)
+            total_score=Sum('employee_achievment_file__score', filter=Q(employee_achievment_file__active=True), default=0) +
+                        Sum('employee_achievment_publication__score', filter=Q(employee_achievment_publication__active=True), default=0),
+            total_unver_score=Sum('employee_achievment_file__score', default=0) + Sum('employee_achievment_publication__score', default=0),
         ).annotate(
             rank=Window(
                 expression=Rank(),
@@ -79,13 +79,13 @@ class EmployeeRankingView(APIView):
             )
         ).order_by('-total_score')
 
-        # Формирование выходного JSON
         result = [
             {
                 'employee_id': employee.id,
                 'surname': employee.surname,
                 'name': employee.name,
                 'total_score': employee.total_score if employee.total_score is not None else 0,
+                'total_unver_score': employee.total_unver_score if employee.total_unver_score is not None else 0,
                 'rank': employee.rank
             }
             for employee in employee_scores
@@ -96,16 +96,16 @@ class EmployeeRankingView(APIView):
 #Рейтинг сотрудников внутри одного подразделения
 class DepartmentEmployeeRankingView(APIView):
     def get(self, request, department_id):
-        # Извлекаем сотрудников конкретного подразделения
         employees = Employee.objects.filter(department_id=department_id).annotate(
-            total_score=Sum('employee_achievment_file__score', default=0) + Sum('employee_achievment_publication__score', default=0),
+            total_score=Sum('employee_achievment_file__score', filter=Q(employee_achievment_file__active=True), default=0) +
+                        Sum('employee_achievment_publication__score', filter=Q(employee_achievment_publication__active=True), default=0),
+            total_unver_score=Sum('employee_achievment_file__score', default=0) + Sum('employee_achievment_publication__score', default=0),
             ranking=Window(
                 expression=Rank(),
                 order_by=F('total_score').desc()
             )
         ).order_by('-total_score')
 
-        # Формируем данные для ответа
         employee_data = [
             {
                 'id': employee.id,
@@ -113,6 +113,7 @@ class DepartmentEmployeeRankingView(APIView):
                 'name': employee.name,
                 'parentName': employee.parentName,
                 'total_score': employee.total_score if employee.total_score is not None else 0,
+                'total_unver_score': employee.total_unver_score if employee.total_unver_score is not None else 0,
                 'ranking': employee.ranking
             }
             for employee in employees
@@ -164,9 +165,18 @@ class EmployeeAchievementsView(APIView):
         # Получаем все показатели
         achievements = Achievment.objects.all()
 
-        # Аннотируем каждое достижение суммой баллов из двух таблиц
+        # Аннотируем каждое достижение суммой баллов из двух таблиц, учитывая только активные достижения
         achievements_with_scores = achievements.annotate(
             total_score=Sum(
+                'employee_achievment_file__score',
+                filter=Q(employee_achievment_file__employee_id=employee_id, employee_achievment_file__active=True),
+                default=0
+            ) + Sum(
+                'employee_achievment_publication__score',
+                filter=Q(employee_achievment_publication__employee_id=employee_id, employee_achievment_publication__active=True),
+                default=0
+            ),
+            total_all_score=Sum(
                 'employee_achievment_file__score',
                 filter=Q(employee_achievment_file__employee_id=employee_id),
                 default=0
@@ -183,6 +193,7 @@ class EmployeeAchievementsView(APIView):
                 'id': achievement.id,
                 'name': achievement.name,
                 'total_score': achievement.total_score if achievement.total_score is not None else 0,
+                'total_all_score': achievement.total_all_score if achievement.total_all_score is not None else 0,
                 'number': achievement.number,
             }
             for achievement in achievements_with_scores
@@ -375,3 +386,39 @@ class GenearatePersonalReportApiView(APIView):
     def get(self, request, *args, **kwargs):
         response = generate_personal_report(request)
         return response
+
+# Подтверждение достижения
+class ConfirmAchievementView(APIView):
+    def post(self, request, achievement_id, is_pub):
+        # Проверяем, находится ли достижение в нужной таблице
+        if is_pub == 'true':
+            achievement = Employee_Achievment_Publication.objects.filter(id=achievement_id).first()
+        else:
+            achievement = Employee_Achievment_File.objects.filter(id=achievement_id).first()
+        
+        if not achievement:
+            return Response({'error': 'Достижение не найдено'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Обновляем поле active на true
+        achievement.active = True
+        achievement.save()
+
+        return Response({'message': 'Достижение подтверждено!'}, status=status.HTTP_200_OK)
+
+# Снятие подтверждения достижения
+class UnConfirmAchievementView(APIView):
+    def post(self, request, achievement_id, is_pub):
+        # Проверяем, находится ли достижение в нужной таблице
+        if is_pub == 'true':
+            achievement = Employee_Achievment_Publication.objects.filter(id=achievement_id).first()
+        else:
+            achievement = Employee_Achievment_File.objects.filter(id=achievement_id).first()
+        
+        if not achievement:
+            return Response({'error': 'Достижение не найдено'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Обновляем поле active на true
+        achievement.active = False
+        achievement.save()
+
+        return Response({'message': 'Достижение подтверждено!'}, status=status.HTTP_200_OK)

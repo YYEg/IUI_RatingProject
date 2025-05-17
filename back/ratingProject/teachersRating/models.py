@@ -67,7 +67,7 @@ class Employee_Achievment_File(models.Model):
     score = models.FloatField(default=0.0)
     full_achivment_name = models.CharField(max_length=1000)
     reciving_date = models.DateField(null=True)
-    active = models.BooleanField(default=True)
+    active = models.BooleanField(default=False)
     verif_doc = models.FileField(upload_to='verification_documents/', blank=True, null=True)
     verif_link = models.CharField(max_length=2000, null=True)
 
@@ -81,7 +81,7 @@ class Employee_Achievment_Publication(models.Model):
     score = models.FloatField(default=0.0)
     full_achivment_name = models.CharField(max_length=1000)
     reciving_date = models.DateField(null=True)
-    active = models.BooleanField(default=True)
+    active = models.BooleanField(default=False)
     pub_type = models.ForeignKey('Pub_Type', on_delete=models.PROTECT, null=True, blank=True)
     pub_grief = models.ForeignKey('Pub_Grief', on_delete=models.PROTECT, null=True, blank=True)
     pub_level = models.ForeignKey('Pub_Level', on_delete=models.PROTECT, null=True, blank=True)

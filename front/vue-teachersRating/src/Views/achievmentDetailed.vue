@@ -185,8 +185,6 @@ const deleteAchievement = async () => {
         data: { email: employeeData.value.email, reason: DelReason.value } // Добавляем email и причину удаления в тело запроса
       }
     )
-
-    console.log('Достижение успешно удалено:', response.data)
     deletedAchForMail.value = response.data
 
     try {
@@ -452,6 +450,57 @@ const saveAchievement = async () => {
     }, 3000)
   }
 }
+
+const confirmAchievement = async (achievementId) => {
+  try {
+    const response = await axios.post(
+      `http://127.0.0.1:8000/api/v1/confirm_achievement/${achievementId}/${topAch.value.is_pub}/`,
+      {},
+      {
+        headers: { Authorization: `Token ${token.value}` }
+      }
+    );
+    console.log('Достижение подтверждено:', response.data);
+    successMessage.value = 'Достижение подтверждено!';
+    try {
+      // Обновляем список достижений после удаления
+      const achievementsResponse = await axios.get(
+        `http://127.0.0.1:8000/api/v1/employees/${route.params.empl_id}/achievements/${topAch.value.is_pub}/${route.params.ach_id}/`
+      )
+      achivmentsData.value = achievementsResponse.data
+    } catch (error) {
+      achivmentsData.value = []
+    }
+  } catch (error) {
+    console.error('Ошибка подтверждения достижения:', error);
+    errorMessage.value = 'Ошибка подтверждения достижения!';
+  }
+};
+const unconfirmAchievement = async (achievementId) => {
+  try {
+    const response = await axios.post(
+      `http://127.0.0.1:8000/api/v1/unconfirm_achievement/${achievementId}/${topAch.value.is_pub}/`,
+      {},
+      {
+        headers: { Authorization: `Token ${token.value}` }
+      }
+    );
+    console.log('Достижение снято с подтверждения:', response.data);
+    successMessage.value = 'Достижение снято с подтверждения!';
+    try {
+      // Обновляем список достижений после удаления
+      const achievementsResponse = await axios.get(
+        `http://127.0.0.1:8000/api/v1/employees/${route.params.empl_id}/achievements/${topAch.value.is_pub}/${route.params.ach_id}/`
+      )
+      achivmentsData.value = achievementsResponse.data
+    } catch (error) {
+      achivmentsData.value = []
+    }
+  } catch (error) {
+    console.error('Ошибка сьема с подтверждения достижения:', error);
+    errorMessage.value = 'Ошибка сьема с подтверждения достижения!';
+  }
+};
 </script>
 
 <template>
@@ -552,6 +601,24 @@ const saveAchievement = async () => {
                   style="cursor: pointer; width: 24px; height: 24px"
                 />
                 <img
+                  v-if="
+                    (route.params.empl_id === currentUser || ['ADMIN', 'ZAV', 'OTV'].includes(role)) && achievement.active === true
+                  "
+                  src="../assets/verif.png"
+                  alt="Логотип"
+                  @click="unconfirmAchievement(achievement.id)"
+                  style="cursor: pointer; width: 24px; height: 24px"
+                />
+                <img
+                  v-if="
+                    (route.params.empl_id === currentUser || ['ADMIN', 'ZAV', 'OTV'].includes(role)) && achievement.active === false
+                  "
+                  src="../assets/unver.png"
+                  alt="Логотип"
+                  @click="confirmAchievement(achievement.id)"
+                  style="cursor: pointer; width: 24px; height: 24px"
+                />
+                <img
                   v-if="achievement.verif_doc != null"
                   @click="downloadDocument(achievement.id)"
                   src="../assets/downl.png"
@@ -576,7 +643,6 @@ const saveAchievement = async () => {
                   alt="Логотип"
                   style="cursor: pointer; width: 24px; height: 24px"
                 />
-                {{ achievement.id }} {{ achievement.full_achivment_name }}
               </div>
             </TableColumn>
           </TableRow>

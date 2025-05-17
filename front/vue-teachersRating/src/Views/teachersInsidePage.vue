@@ -57,9 +57,9 @@ const hasConference = ref(false)
 const tableHeads = [
   { key: 'id', label: '№' },
   { key: 'name', label: 'Наименование показателя' },
-  { key: 'score', label: 'Балл' }
+  { key: 'score', label: 'Подтвержденный балл / Общий балл' }
 ]
-const tableSizeColumns = '1fr 8fr 2fr'
+const tableSizeColumns = '1fr 8fr 3fr'
 const searchQuery = ref('')
 const sortBy = reactive({
   column: 'score',
@@ -504,7 +504,7 @@ const handleFileUpload = (event) => {
             <TableColumn v-else>
               {{ achievement.name }}
             </TableColumn>
-            <TableColumn>{{ achievement.total_score }}</TableColumn>
+            <TableColumn>{{ achievement.total_score }} / {{achievement.total_all_score}}</TableColumn>
           </TableRow>
         </template>
       </BaseTable>

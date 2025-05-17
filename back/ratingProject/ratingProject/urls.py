@@ -5,7 +5,8 @@ from rest_framework.authtoken.views import obtain_auth_token
 from teachersRating.views import Logout, PubGriefApiView, PubLevelApiView, PubTypeApiView, UserProfileView, \
     EmployeeRankingView, DepartmentRankingView, DepartmentEmployeeRankingView, OneDepartmentView, EmployeeAchievementsView, \
         AddAchievementFileView, AchievementsListView, OneAchievmentApiView, EmployeeAchievementsByFlagView, OneEmployeeView, \
-            AddAchievementPublicationView, UpdateMessage, DeleteAchievementView, EditAchievementView, AchievementDetailView, GenearatePersonalReportApiView;
+            AddAchievementPublicationView, UpdateMessage, DeleteAchievementView, EditAchievementView, AchievementDetailView, GenearatePersonalReportApiView, \
+                ConfirmAchievementView, UnConfirmAchievementView;
 
 urlpatterns = [
     # Аутентификация и профиль
@@ -45,6 +46,10 @@ urlpatterns = [
 
     # Генерация отчетов 
     path('api/v1/generate_personal_report/', GenearatePersonalReportApiView.as_view(), name='generate_report'),
+
+    # Подтверждение достижения
+    path('api/v1/confirm_achievement/<int:achievement_id>/<str:is_pub>/', ConfirmAchievementView.as_view(), name='confirm_achievement'),
+    path('api/v1/unconfirm_achievement/<int:achievement_id>/<str:is_pub>/', UnConfirmAchievementView.as_view(), name='unconfirm_achievement'),
     #path('api/v1/generate_report/', generate_report, name='generate_report'),
     #  path('download/<int:achievement_record_id>/', DownloadAchievementDocumentApiView.as_view(), name='download_achievement_document'),
     
