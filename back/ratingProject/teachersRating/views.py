@@ -68,9 +68,14 @@ class DepartmentRankingView(APIView):
 # Рейтинга сотурдников
 class EmployeeRankingView(APIView):
     def get(self, request):
+        period = request.query_params.get('period')
+        start_date, end_date = period.split('-')
+        start_date = datetime.strptime(start_date, '%d.%m.%Y')
+        end_date = datetime.strptime(end_date, '%d.%m.%Y')
+
         employee_scores = Employee.objects.annotate(
-            total_score=Sum('employee_achievment_file__score', filter=Q(employee_achievment_file__active=True), default=0) +
-                        Sum('employee_achievment_publication__score', filter=Q(employee_achievment_publication__active=True), default=0),
+            total_score=Sum('employee_achievment_file__score', filter=Q(employee_achievment_file__active=True, employee_achievment_file__reciving_date__range=(start_date, end_date)), default=0) +
+                        Sum('employee_achievment_publication__score', filter=Q(employee_achievment_publication__active=True, employee_achievment_publication__reciving_date__range=(start_date, end_date)), default=0),
             total_unver_score=Sum('employee_achievment_file__score', default=0) + Sum('employee_achievment_publication__score', default=0),
         ).annotate(
             rank=Window(

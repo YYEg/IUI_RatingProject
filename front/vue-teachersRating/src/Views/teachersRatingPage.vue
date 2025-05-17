@@ -3,7 +3,7 @@ import headerBlock from '../components/headerBlock.vue'
 import BaseTable from '@/components/Table/BaseTable.vue'
 import TableRow from '@/components/Table/TableRow.vue'
 import TableColumn from '@/components/Table/TableColumn.vue'
-import { computed, onMounted, ref, reactive } from 'vue'
+import { computed, onMounted, ref, reactive, watch } from 'vue'
 import axios from 'axios'
 
 const tableHeads = [
@@ -64,19 +64,28 @@ const sortedEmployees = computed(() => {
 })
 
 // Вытягиваю данные с бека для всех сотрудников
-onMounted(async () => {
-  // Проверяем, есть ли токен
+const fetchEmployeeData = async () => {
   if (!token.value) {
-    // Если токена нет, перенаправляем на страницу авторизации
     window.location.href = '/login'
     return
   }
   try {
-    const employeeResponse = await axios.get('http://127.0.0.1:8000/api/v1/employee_ranking/')
+    const employeeResponse = await axios.get('http://127.0.0.1:8000/api/v1/employee_ranking/', {
+      params: {
+        period: selectedPeriod.value
+      }
+    })
     employeesData.value = employeeResponse.data
   } catch (error) {
     console.log(error)
   }
+}
+
+onMounted(fetchEmployeeData)
+
+// Отслеживание изменений в selectedPeriod
+watch(selectedPeriod, () => {
+  fetchEmployeeData()
 })
 </script>
 
@@ -123,9 +132,10 @@ onMounted(async () => {
           v-model="selectedPeriod"
           class="bg-white border border-gray-300 text-sm rounded-md focus:ring-blue-900 block w-full p-2"
         >
-          <option>01.09.2024-31.08.2025 (Текущий)</option>
-          <option>01.09.2023-31.08.2024</option>
-          <option>01.09.2022-31.08.2023</option>
+          <option value="01.09.2025-31.08.2026">01.09.2025-31.08.2026</option>
+          <option value="01.09.2024-31.08.2025">01.09.2024-31.08.2025</option>
+          <option value="01.09.2023-31.08.2024">01.09.2023-31.08.2024</option>
+          <option value="01.09.2022-31.08.2023">01.09.2022-31.08.2023</option>
         </select>
       </form>
     </div>
