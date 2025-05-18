@@ -11,6 +11,7 @@ const emplAch = ref([])
 const JustAch = ref([])
 const topAch = ref([])
 const selectedAchievement = ref(null)
+const selectedPeriod = ref('01.09.2024-31.08.2025')
 const achivmentsData = ref([])
 const isDeleting = ref(false)
 const isSending = ref(false)
@@ -147,7 +148,12 @@ const getUserData = async () => {
     )
     topAch.value = oneAchResp.data
     const achievementsResponse = await axios.get(
-      `http://127.0.0.1:8000/api/v1/employees/${route.params.empl_id}/achievements/${topAch.value.is_pub}/${route.params.ach_id}/`
+      `http://127.0.0.1:8000/api/v1/employees/${route.params.empl_id}/achievements/${topAch.value.is_pub}/${route.params.ach_id}/`,
+      {
+        params: {
+          period: selectedPeriod.value
+        }
+      }
     )
     achivmentsData.value = achievementsResponse.data
   } catch (error) {
@@ -501,6 +507,11 @@ const unconfirmAchievement = async (achievementId) => {
     errorMessage.value = 'Ошибка сьема с подтверждения достижения!';
   }
 };
+
+// Отслеживание изменений в selectedPeriod
+watch(selectedPeriod, () => {
+  getUserData()
+})
 </script>
 
 <template>
@@ -543,12 +554,13 @@ const unconfirmAchievement = async (achievementId) => {
       </div>
       <form class="mx-4">
         <select
-          id="countries"
+          v-model="selectedPeriod"
           class="bg-white border border-gray-300 text-sm rounded-md focus:ring-blue-900 block w-full p-2"
         >
-          <option selected>01.09.2024-31.08.2025 (Текущий)</option>
-          <option>01.09.2023-31.08.2024</option>
-          <option>01.09.2022-31.08.2023</option>
+          <option value="01.09.2025-31.08.2026">01.09.2025-31.08.2026</option>
+          <option value="01.09.2024-31.08.2025">01.09.2024-31.08.2025</option>
+          <option value="01.09.2023-31.08.2024">01.09.2023-31.08.2024</option>
+          <option value="01.09.2022-31.08.2023">01.09.2022-31.08.2023</option>
         </select>
       </form>
     </div>

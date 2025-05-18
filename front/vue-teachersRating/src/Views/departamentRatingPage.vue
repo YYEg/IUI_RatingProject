@@ -3,7 +3,7 @@ import headerBlock from '../components/headerBlock.vue'
 import BaseTable from '@/components/Table/BaseTable.vue'
 import TableRow from '@/components/Table/TableRow.vue'
 import TableColumn from '@/components/Table/TableColumn.vue'
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import axios from 'axios'
 
 // Заголовки столбцов таблицы
@@ -26,20 +26,28 @@ const sortBy = reactive({
   order: 'desc'
 })
 
-onMounted(async () => {
-  // Проверяем, есть ли токен
+const selectedPeriod = ref('01.09.2024-31.08.2025')
+
+
+
+// Вытягиваю данные с бека для всех сотрудников
+const fetchDepartmentData = async () => {
   if (!token.value) {
-    // Если токена нет, перенаправляем на страницу авторизации
     window.location.href = '/login'
     return
   }
   try {
-    const response = await axios.get('http://127.0.0.1:8000/api/v1/department_ranking/')
+    const response = await axios.get('http://127.0.0.1:8000/api/v1/department_ranking/', {
+      params: {
+        period: selectedPeriod.value
+      }
+    })
     departmentData.value = response.data
   } catch (error) {
     console.error('Ошибка загрузки данных кафедр:', error)
   }
-})
+}
+onMounted(fetchDepartmentData)
 
 // Функция смены порядка сортировки
 const sortTable = (column) => {
@@ -69,6 +77,11 @@ const sortedDepartmentData = computed(() => {
       return sortBy.order === 'asc' ? aValue - bValue : bValue - aValue
     }
   })
+})
+
+// Отслеживание изменений в selectedPeriod
+watch(selectedPeriod, () => {
+  fetchDepartmentData()
 })
 </script>
 
@@ -112,12 +125,13 @@ const sortedDepartmentData = computed(() => {
       </div>
       <form class="mx-4">
         <select
-          id="countries"
+          v-model="selectedPeriod"
           class="bg-white border border-gray-300 text-sm rounded-md focus:ring-blue-900 block w-full p-2"
         >
-          <option selected>01.09.2024-31.08.2025 (Текущий)</option>
-          <option>01.09.2023-31.08.2024</option>
-          <option>01.09.2022-31.08.2023</option>
+          <option value="01.09.2025-31.08.2026">01.09.2025-31.08.2026</option>
+          <option value="01.09.2024-31.08.2025">01.09.2024-31.08.2025</option>
+          <option value="01.09.2023-31.08.2024">01.09.2023-31.08.2024</option>
+          <option value="01.09.2022-31.08.2023">01.09.2022-31.08.2023</option>
         </select>
       </form>
     </div>

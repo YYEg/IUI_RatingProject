@@ -16,6 +16,7 @@ const userName = ref(null)
 const successMessage = ref('')
 const errorMessage = ref('')
 const userDepatment = ref(null)
+const selectedPeriod = ref('01.09.2024-31.08.2025')
 const token = ref(localStorage.getItem('token') || '')
 const role = computed(() => localStorage.getItem('role'))
 const selectedAchievement = ref(null)
@@ -100,7 +101,12 @@ const getUserData = async () => {
     role.value = localStorage.role
 
     const achievementsResponse = await axios.get(
-      `http://127.0.0.1:8000/api/v1/employee_achievements/${teacherId.value}`
+      `http://127.0.0.1:8000/api/v1/employee_achievements/${teacherId.value}`,
+      {
+        params: {
+          period: selectedPeriod.value
+        }
+      }
     )
     achivmentsData.value = achievementsResponse.data
     console.log(achivmentsData.value)
@@ -389,6 +395,11 @@ const onAchievementChange = async () => {
 // Слежение за изменениями в selectedAchievement
 watch(selectedAchievement, onAchievementChange)
 
+// Отслеживание изменений в selectedPeriod
+watch(selectedPeriod, () => {
+  getUserData()
+})
+
 const handleFileUpload = (event) => {
   const file = event.target.files[0]
   if (file) {
@@ -437,12 +448,13 @@ const handleFileUpload = (event) => {
       </div>
       <form class="mx-4">
         <select
-          id="countries"
+          v-model="selectedPeriod"
           class="bg-white border border-gray-300 text-sm rounded-md focus:ring-blue-900 block w-full p-2"
         >
-          <option selected>01.09.2024-31.08.2025 (Текущий)</option>
-          <option>01.09.2023-31.08.2024</option>
-          <option>01.09.2022-31.08.2023</option>
+          <option value="01.09.2025-31.08.2026">01.09.2025-31.08.2026</option>
+          <option value="01.09.2024-31.08.2025">01.09.2024-31.08.2025</option>
+          <option value="01.09.2023-31.08.2024">01.09.2023-31.08.2024</option>
+          <option value="01.09.2022-31.08.2023">01.09.2022-31.08.2023</option>
         </select>
       </form>
     </div>
@@ -450,21 +462,21 @@ const handleFileUpload = (event) => {
     <!-- Кнопки над таблицей -->
     <div class="grid grid-cols-3 mt-4 mx-4">
       <div
-        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
+        class="flex justify-center font-semibold items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="() => $router.go(-1)"
       >
         Назад
       </div>
       <div
         v-if="['ADMIN', 'ZAV', 'OTV'].includes(role)"
-        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
+        class="flex justify-center items-center font-semibold bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="downloadReport"
       >
         Вывести данные в отчет
       </div>
       <div
         v-if="['ADMIN', 'ZAV', 'OTV'].includes(role)"
-        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
+        class="flex justify-center items-center font-semibold bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="openModal"
       >
         Добавить достижение

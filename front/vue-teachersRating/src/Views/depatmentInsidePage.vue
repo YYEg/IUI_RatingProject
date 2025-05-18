@@ -3,7 +3,7 @@ import headerBlock from '../components/headerBlock.vue'
 import BaseTable from '@/components/Table/BaseTable.vue'
 import TableRow from '@/components/Table/TableRow.vue'
 import TableColumn from '@/components/Table/TableColumn.vue'
-import { computed, onMounted, ref, reactive } from 'vue'
+import { computed, onMounted, ref, reactive, watch } from 'vue'
 import axios from 'axios'
 import { useRoute } from 'vue-router'
 
@@ -72,6 +72,28 @@ const sortedEmployees = computed(() => {
   })
 })
 
+// Вытягиваю данные с бека для всех сотрудников
+const fetchEmployeeData = async () => {
+  // Проверяем, есть ли токен
+  if (!token.value) {
+    // Если токена нет, перенаправляем на страницу авторизации
+    window.location.href = '/login'
+    return
+  }
+  try {
+    const employeeResponse = await axios.get(
+      `http://127.0.0.1:8000/api/v1/department_employee_ranking/${departmentId}/`, {
+        params: {
+          period: selectedPeriod.value
+        }
+      }
+    )
+    employeesData.value = employeeResponse.data
+  } catch (error) {
+    console.log(error)
+  }
+}
+
 // Вытягиваю данные с бэка для сотрудников конкретной кафедры
 onMounted(async () => {
   // Проверяем, есть ли токен
@@ -104,7 +126,11 @@ onMounted(async () => {
   }
   try {
     const employeeResponse = await axios.get(
-      `http://127.0.0.1:8000/api/v1/department_employee_ranking/${departmentId}/`
+      `http://127.0.0.1:8000/api/v1/department_employee_ranking/${departmentId}/`, {
+        params: {
+          period: selectedPeriod.value
+        }
+      }
     )
     employeesData.value = employeeResponse.data
   } catch (error) {
@@ -116,6 +142,11 @@ onMounted(async () => {
     role.value === 'OTV' ||
     (role.value === 'ZAV' &&
       String(departmentId) === String(auth_user_department.value))
+})
+
+// Отслеживание изменений в selectedPeriod
+watch(selectedPeriod, () => {
+  fetchEmployeeData()
 })
 </script>
 
@@ -162,28 +193,29 @@ onMounted(async () => {
           v-model="selectedPeriod"
           class="bg-white border border-gray-300 text-sm rounded-md focus:ring-blue-900 block w-full p-2"
         >
-          <option>01.09.2024-31.08.2025 (Текущий)</option>
-          <option>01.09.2023-31.08.2024</option>
-          <option>01.09.2022-31.08.2023</option>
+          <option value="01.09.2025-31.08.2026">01.09.2025-31.08.2026</option>
+          <option value="01.09.2024-31.08.2025">01.09.2024-31.08.2025</option>
+          <option value="01.09.2023-31.08.2024">01.09.2023-31.08.2024</option>
+          <option value="01.09.2022-31.08.2023">01.09.2022-31.08.2023</option>
         </select>
       </form>
     </div>
 
     <div class="grid grid-cols-3 my-4 mx-4">
       <div
-        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
+        class="flex font-semibold justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="() => $router.go(-1)"
       >
         Назад
       </div>
       <div
-        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm rounded-2xl shadow-2xl border-2 border-slate-400"
+        class="flex font-semibold justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm rounded-2xl shadow-2xl border-2 border-slate-400"
       >
         {{ depData.name }}
       </div>
       <div
         v-if="canDisplayBlock"
-        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
+        class="flex justify-center font-semibold items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="downloadReport"
       >
         Вывести данные в отчет

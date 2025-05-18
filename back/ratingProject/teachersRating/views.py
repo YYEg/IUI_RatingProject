@@ -43,9 +43,19 @@ class OneEmployeeView(generics.RetrieveAPIView):
 # Рейтинг подразделений
 class DepartmentRankingView(APIView):
     def get(self, request):
+        period = request.query_params.get('period')
+        if period:
+            start_date, end_date = period.split('-')
+            start_date = datetime.strptime(start_date, '%d.%m.%Y')
+            end_date = datetime.strptime(end_date, '%d.%m.%Y')
+            file_score_filter = Q(employee__employee_achievment_file__active=True, employee__employee_achievment_file__reciving_date__range=(start_date, end_date))
+            pub_score_filter = Q(employee__employee_achievment_publication__active=True, employee__employee_achievment_publication__reciving_date__range=(start_date, end_date))
+        else:
+            file_score_filter = Q(employee__employee_achievment_file__active=True)
+            pub_score_filter = Q(employee__employee_achievment_publication__active=True)
         department_scores = Department.objects.annotate(
-            total_score=Sum('employee__employee_achievment_file__score', filter=Q(employee__employee_achievment_file__active=True), default=0) +
-                        Sum('employee__employee_achievment_publication__score', filter=Q(employee__employee_achievment_publication__active=True), default=0),
+            total_score=Sum('employee__employee_achievment_file__score', filter=file_score_filter, default=0) +
+                        Sum('employee__employee_achievment_publication__score', filter=pub_score_filter, default=0),
         ).annotate(
             rank=Window(
                 expression=Rank(),
@@ -101,9 +111,19 @@ class EmployeeRankingView(APIView):
 #Рейтинг сотрудников внутри одного подразделения
 class DepartmentEmployeeRankingView(APIView):
     def get(self, request, department_id):
+        period = request.query_params.get('period')
+        if period:
+            start_date, end_date = period.split('-')
+            start_date = datetime.strptime(start_date, '%d.%m.%Y')
+            end_date = datetime.strptime(end_date, '%d.%m.%Y')
+            file_score_filter = Q(employee_achievment_file__active=True, employee_achievment_file__reciving_date__range=(start_date, end_date))
+            pub_score_filter = Q(employee_achievment_publication__active=True, employee_achievment_publication__reciving_date__range=(start_date, end_date))
+        else:
+            file_score_filter = Q(employee_achievment_file__active=True)
+            pub_score_filter = Q(employee_achievment_publication__active=True)
         employees = Employee.objects.filter(department_id=department_id).annotate(
-            total_score=Sum('employee_achievment_file__score', filter=Q(employee_achievment_file__active=True), default=0) +
-                        Sum('employee_achievment_publication__score', filter=Q(employee_achievment_publication__active=True), default=0),
+            total_score=Sum('employee_achievment_file__score', filter=file_score_filter, default=0) +
+                        Sum('employee_achievment_publication__score', filter=pub_score_filter, default=0),
             total_unver_score=Sum('employee_achievment_file__score', default=0) + Sum('employee_achievment_publication__score', default=0),
             ranking=Window(
                 expression=Rank(),
@@ -167,32 +187,37 @@ class UserProfileView(APIView):
 # Достижения сотрудника
 class EmployeeAchievementsView(APIView):
     def get(self, request, employee_id):
-        # Получаем все показатели
+        period = request.query_params.get('period')
+        if period:
+            start_date, end_date = period.split('-')
+            start_date = datetime.strptime(start_date, '%d.%m.%Y')
+            end_date = datetime.strptime(end_date, '%d.%m.%Y')
+            file_score_filter = Q(employee_achievment_file__employee_id=employee_id, employee_achievment_file__active=True, employee_achievment_file__reciving_date__range=(start_date, end_date))
+            pub_score_filter = Q(employee_achievment_publication__employee_id=employee_id, employee_achievment_publication__active=True, employee_achievment_publication__reciving_date__range=(start_date, end_date))
+        else:
+            file_score_filter = Q(employee_achievment_file__employee_id=employee_id, employee_achievment_file__active=True)
+            pub_score_filter = Q(employee_achievment_publication__employee_id=employee_id, employee_achievment_publication__active=True)
         achievements = Achievment.objects.all()
-
-        # Аннотируем каждое достижение суммой баллов из двух таблиц, учитывая только активные достижения
         achievements_with_scores = achievements.annotate(
             total_score=Sum(
                 'employee_achievment_file__score',
-                filter=Q(employee_achievment_file__employee_id=employee_id, employee_achievment_file__active=True),
+                filter=file_score_filter,
                 default=0
             ) + Sum(
                 'employee_achievment_publication__score',
-                filter=Q(employee_achievment_publication__employee_id=employee_id, employee_achievment_publication__active=True),
+                filter=pub_score_filter,
                 default=0
             ),
             total_all_score=Sum(
                 'employee_achievment_file__score',
-                filter=Q(employee_achievment_file__employee_id=employee_id),
+                filter=Q(employee_achievment_file__employee_id=employee_id, employee_achievment_file__reciving_date__range=(start_date, end_date)),
                 default=0
             ) + Sum(
                 'employee_achievment_publication__score',
-                filter=Q(employee_achievment_publication__employee_id=employee_id),
+                filter=Q(employee_achievment_publication__employee_id=employee_id, employee_achievment_publication__reciving_date__range=(start_date, end_date)),
                 default=0
             )
         )
-
-        # Формируем данные для ответа
         achievement_data = [
             {
                 'id': achievement.id,
@@ -203,7 +228,6 @@ class EmployeeAchievementsView(APIView):
             }
             for achievement in achievements_with_scores
         ]
-
         return Response(achievement_data)
 
 # Одно достижение
@@ -217,13 +241,25 @@ class EmployeeAchievementsByFlagView(APIView):
     def get(self, request, employee_id, achievement_id, is_pub):
         # Преобразуем строковое значение в логическое
         is_pub = is_pub.lower() == 'true'
-        
+        period = request.query_params.get('period')
         if is_pub:
             # Если флаг is_pub равен True, ищем в Employee_Achievment_Publication
-            achievements = Employee_Achievment_Publication.objects.filter(employee_id=employee_id, achievment_id=achievement_id)
+            if period:
+                start_date, end_date = period.split('-')
+                start_date = datetime.strptime(start_date, '%d.%m.%Y')
+                end_date = datetime.strptime(end_date, '%d.%m.%Y')
+                achievements = Employee_Achievment_Publication.objects.filter(employee_id=employee_id, achievment_id=achievement_id, reciving_date__range=(start_date, end_date))
+            else:
+                achievements = Employee_Achievment_Publication.objects.filter(employee_id=employee_id, achievment_id=achievement_id)
         else:
             # Если флаг is_pub равен False, ищем в Employee_Achievment_File
-            achievements = Employee_Achievment_File.objects.filter(employee_id=employee_id, achievment_id=achievement_id)
+            if period:
+                start_date, end_date = period.split('-')
+                start_date = datetime.strptime(start_date, '%d.%m.%Y')
+                end_date = datetime.strptime(end_date, '%d.%m.%Y')
+                achievements = Employee_Achievment_File.objects.filter(employee_id=employee_id, achievment_id=achievement_id, reciving_date__range=(start_date, end_date))
+            else:
+                achievements = Employee_Achievment_File.objects.filter(employee_id=employee_id, achievment_id=achievement_id)
 
         # Формируем данные для ответа
         achievement_data = [

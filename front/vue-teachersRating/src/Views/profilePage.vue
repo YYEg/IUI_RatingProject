@@ -16,6 +16,7 @@ const errorMessage = ref('')
 const userDepatment = ref(null)
 const token = ref(localStorage.getItem('token') || '')
 const role = computed(() => localStorage.getItem('role'))
+const selectedPeriod = ref('01.09.2024-31.08.2025')
 const selectedAchievement = ref(null)
 const meas_unit = ref('')
 const verif_doc_info = ref('')
@@ -55,7 +56,7 @@ const hasConference = ref(false)
 const tableHeads = [
   { key: 'id', label: '№' },
   { key: 'name', label: 'Наименование показателя' },
-  { key: 'score', label: 'Балл' }
+  { key: 'score', label: 'Подтвержденный балл / Общий балл' }
 ]
 const tableSizeColumns = '1fr 8fr 2fr'
 const searchQuery = ref('')
@@ -111,7 +112,12 @@ const getUserData = async () => {
     userDepatment.value = userData.value.department
     
     const achievementsResponse = await axios.get(
-      `http://127.0.0.1:8000/api/v1/employee_achievements/${teacherId.value}`
+      `http://127.0.0.1:8000/api/v1/employee_achievements/${teacherId.value}`,
+      {
+        params: {
+          period: selectedPeriod.value
+        }
+      }
     )
     achivmentsData.value = achievementsResponse.data
     const AllAchResp = await axios.get('http://127.0.0.1:8000/api/v1/achievements/')
@@ -413,6 +419,11 @@ const handleFileUpload = (event) => {
     inputed_doc_ver_link.value = file
   }
 }
+
+// Отслеживание изменений в selectedPeriod
+watch(selectedPeriod, () => {
+  getUserData()
+})
 </script>
 
 <template>
@@ -428,12 +439,6 @@ const handleFileUpload = (event) => {
         </div>
       </div>
     </headerBlock>
-
-    <div
-      class="mx-4 flex justify-center items-center text-black text-3xl p-4 text-center font-sm cursor-pointer"
-    >
-      {{ userName }}
-    </div>
     
     <!-- Фильтры -->
     <div class="flex grid grid-cols-2 items-center mt-4 mx-4">
@@ -463,33 +468,42 @@ const handleFileUpload = (event) => {
       </div>
       <form class="mx-4">
         <select
-          id="countries"
+          v-model="selectedPeriod"
           class="bg-white border border-gray-300 text-sm rounded-md focus:ring-blue-900 block w-full p-2"
         >
-          <option selected>01.09.2024-31.08.2025 (Текущий)</option>
-          <option>01.09.2023-31.08.2024</option>
-          <option>01.09.2022-31.08.2023</option>
+          <option value="01.09.2025-31.08.2026">01.09.2025-31.08.2026</option>
+          <option value="01.09.2024-31.08.2025">01.09.2024-31.08.2025</option>
+          <option value="01.09.2023-31.08.2024">01.09.2023-31.08.2024</option>
+          <option value="01.09.2022-31.08.2023">01.09.2022-31.08.2023</option>
         </select>
       </form>
     </div>
 
+    <div
+      class="mx-4 flex justify-center font-semibold items-center text-black text-3xl p-4 text-center cursor-pointer "
+    >
+      {{ userName }}
+    </div>
+    <div class="mx-4 justify-center font-semibold items-center border-b border-black shadow-sm shadow-blue-600"></div>
+    
+
     <!-- Кнопки над таблицей -->
     <div class="grid grid-cols-3 mt-4 mx-4">
       <div
-        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
+        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-semibold transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="() => $router.go(-1)"
       >
         Назад
       </div>
       <div
         v-if="['ADMIN', 'ZAV', 'OTV'].includes(role)"
-        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
+        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-semibold transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="downloadReport"
       >
         Вывести данные в отчет
       </div>
       <div
-        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-sm transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
+        class="flex justify-center items-center bg-white text-xl text-black p-2 m-2 text-center font-semibold transition hover:scale-105 cursor-pointer rounded-2xl shadow-2xl border-2 border-slate-400"
         @click="openModal"
       >
         Добавить достижение
@@ -530,12 +544,13 @@ const handleFileUpload = (event) => {
             <TableColumn v-else>
               {{ achievement.name }}
             </TableColumn>
-            <TableColumn>{{ achievement.total_score }}</TableColumn>
+            <TableColumn>{{ achievement.total_score }} / {{achievement.total_all_score}}</TableColumn>
           </TableRow>
         </template>
       </BaseTable>
 
       <div class="text-center text-2xl font-bold mt-4">Итого баллов: {{ totalScore }}</div>
+      
 
       <!-- Модальное окно -->
       <div
@@ -544,7 +559,7 @@ const handleFileUpload = (event) => {
       >
         <div class="bg-white p-5 rounded-lg shadow-lg max-w-lg w-full">
           <div class="flex justify-between items-center">
-            <h2 class="text-3xl font-sm text-gray-800">Добавить достижение</h2>
+            <h2 class="text-3xl font-sm text-gray-800 font-semibold">Добавить достижение</h2>
             <button @click="closeModal" class="text-4xl text-red-500">×</button>
           </div>
 
