@@ -48,10 +48,10 @@ def generate_personal_report(request):
 
         # Получаем достижения сотрудника с teacher_id
         # Получаем достижения сотрудника с teacher_id из обеих таблиц
-        employee_achievements_file = Employee_Achievment_File.objects.filter(employee_id=teacher_id).values(
+        employee_achievements_file = Employee_Achievment_File.objects.filter(employee_id=teacher_id, active=True).values(
             'id', 'achievment_id', 'full_achivment_name', 'meas_unit_val', 'score'
         )
-        employee_achievements_publication = Employee_Achievment_Publication.objects.filter(employee_id=teacher_id).values(
+        employee_achievements_publication = Employee_Achievment_Publication.objects.filter(employee_id=teacher_id, active=True).values(
             'id', 'achievment_id', 'full_achivment_name', 'meas_unit_val', 'score'
         )
         

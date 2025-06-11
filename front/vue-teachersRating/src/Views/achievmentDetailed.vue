@@ -631,7 +631,8 @@ watch(selectedPeriod, () => {
                   style="cursor: pointer; width: 24px; height: 24px"
                 />
                 <img
-                  v-if="achievement.verif_doc != null"
+                v-if="
+                    (route.params.empl_id === currentUser || ['ADMIN', 'ZAV', 'OTV'].includes(role))"
                   @click="downloadDocument(achievement.id)"
                   src="../assets/downl.png"
                   alt="Логотип"
@@ -648,7 +649,7 @@ watch(selectedPeriod, () => {
                 />
                 <img
                   v-if="
-                    route.params.empl_id === currentUser || ['ADMIN', 'ZAV', 'OTV'].includes(role)
+                    ['ADMIN', 'ZAV', 'OTV'].includes(role)
                   "
                   @click="openMessageModal(achievement.id)"
                   src="../assets/mes.png"

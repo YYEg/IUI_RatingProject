@@ -6,7 +6,7 @@ from teachersRating.views import Logout, PubGriefApiView, PubLevelApiView, PubTy
     EmployeeRankingView, DepartmentRankingView, DepartmentEmployeeRankingView, OneDepartmentView, EmployeeAchievementsView, \
         AddAchievementFileView, AchievementsListView, OneAchievmentApiView, EmployeeAchievementsByFlagView, OneEmployeeView, \
             AddAchievementPublicationView, UpdateMessage, DeleteAchievementView, EditAchievementView, AchievementDetailView, GenearatePersonalReportApiView, \
-                ConfirmAchievementView, UnConfirmAchievementView;
+                ConfirmAchievementView, UnConfirmAchievementView, DownloadAchievementDocumentApiView;
 
 urlpatterns = [
     # Аутентификация и профиль
@@ -50,7 +50,6 @@ urlpatterns = [
     # Подтверждение достижения
     path('api/v1/confirm_achievement/<int:achievement_id>/<str:is_pub>/', ConfirmAchievementView.as_view(), name='confirm_achievement'),
     path('api/v1/unconfirm_achievement/<int:achievement_id>/<str:is_pub>/', UnConfirmAchievementView.as_view(), name='unconfirm_achievement'),
-    #path('api/v1/generate_report/', generate_report, name='generate_report'),
-    #  path('download/<int:achievement_record_id>/', DownloadAchievementDocumentApiView.as_view(), name='download_achievement_document'),
+    path('download/<int:achievement_record_id>/', DownloadAchievementDocumentApiView.as_view(), name='download_achievement_document'),
     
 ]
